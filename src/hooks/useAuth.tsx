@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/bank_benefits/#/dashboard`,
+        redirectTo: `${window.location.origin}${window.location.pathname.includes('bank_benefits') ? '/bank_benefits/' : '/'}#/dashboard`,
       },
     })
   }
