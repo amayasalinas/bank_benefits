@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #F7F8FF;
+    color: #0F0F23;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #C9C4FB;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #8577F5;
+  }
+}
+
+@layer components {
+  .eliseo-card {
+    @apply bg-white rounded-2xl shadow-card border border-eliseo-100/50;
+  }
+
+  .eliseo-btn-primary {
+    @apply bg-eliseo-500 hover:bg-eliseo-600 text-white font-semibold rounded-xl px-6 py-3 transition-all duration-200 active:scale-95 shadow-sm;
+  }
+
+  .eliseo-btn-secondary {
+    @apply bg-eliseo-50 hover:bg-eliseo-100 text-eliseo-600 font-semibold rounded-xl px-6 py-3 transition-all duration-200 active:scale-95;
+  }
+
+  .eliseo-btn-outline {
+    @apply border-2 border-eliseo-200 hover:border-eliseo-400 text-eliseo-600 font-semibold rounded-xl px-6 py-3 transition-all duration-200 active:scale-95;
+  }
+
+  .page-container {
+    @apply max-w-2xl mx-auto px-4 pb-24 pt-4;
+  }
+
+  .section-title {
+    @apply text-lg font-bold text-gray-900 mb-3;
+  }
+
+  .badge-tier {
+    @apply text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  .input-field {
+    @apply w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-eliseo-300 focus:border-eliseo-400 transition-all duration-200;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.85);
+  }
+}
