@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Tag, ExternalLink, ChevronRight, Flame } from 'lucide-react'
+import { Tag, ExternalLink, ChevronRight, Flame, CreditCard } from 'lucide-react'
 import { BANKS, getBankById } from '../data/banks'
 import type { BenefitCategory } from '../types'
 import { CATEGORIES } from '../types'
+import { useUserCards } from '../hooks/useUserCards'
 
 interface Offer {
   id: string
@@ -160,10 +161,21 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export default function Offers() {
+  const { userCards } = useUserCards()
   const [activeCategory, setActiveCategory] = useState<BenefitCategory | 'all'>('all')
   const [activeBank, setActiveBank] = useState<string>('all')
 
-  const filteredOffers = DEMO_OFFERS.filter(o => {
+  // Derive the user's available banks from their cards
+  const userBankIds = useMemo(() => {
+    return [...new Set(userCards.map(uc => uc.card?.bank_id).filter(Boolean))] as string[]
+  }, [userCards])
+
+  // Only show offers belonging to banks where the user has a card
+  const availableOffers = useMemo(() => {
+    return DEMO_OFFERS.filter(offer => userBankIds.includes(offer.bank_id))
+  }, [userBankIds])
+
+  const filteredOffers = availableOffers.filter(o => {
     const catMatch = activeCategory === 'all' || o.category === activeCategory
     const bankMatch = activeBank === 'all' || o.bank_id === activeBank
     return catMatch && bankMatch
@@ -172,7 +184,7 @@ export default function Offers() {
   const highlightedOffers = filteredOffers.filter(o => o.highlight)
   const regularOffers = filteredOffers.filter(o => !o.highlight)
 
-  const banksWithOffers = [...new Set(DEMO_OFFERS.map(o => o.bank_id))]
+  const banksWithOffers = [...new Set(availableOffers.map(o => o.bank_id))]
 
   const formatDate = (d: string | null) => {
     if (!d) return 'Vigente'
@@ -194,9 +206,8 @@ export default function Offers() {
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-4">
         <button
           onClick={() => setActiveCategory('all')}
-          className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeCategory === 'all' ? 'bg-eliseo-500 text-white' : 'bg-white text-gray-500 border border-gray-200'
-          }`}
+          className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeCategory === 'all' ? 'bg-eliseo-500 text-white' : 'bg-white text-gray-500 border border-gray-200'
+            }`}
         >
           Todas
         </button>
@@ -204,9 +215,8 @@ export default function Offers() {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id === activeCategory ? 'all' : cat.id)}
-            className={`flex-shrink-0 px-3 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 ${
-              activeCategory === cat.id ? 'bg-eliseo-500 text-white' : 'bg-white text-gray-500 border border-gray-200'
-            }`}
+            className={`flex-shrink-0 px-3 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 ${activeCategory === cat.id ? 'bg-eliseo-500 text-white' : 'bg-white text-gray-500 border border-gray-200'
+              }`}
           >
             <span>{cat.emoji}</span>
             {cat.name}
@@ -218,9 +228,8 @@ export default function Offers() {
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 mb-5">
         <button
           onClick={() => setActiveBank('all')}
-          className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-            activeBank === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'
-          }`}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeBank === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'
+            }`}
         >
           Todos
         </button>
@@ -231,9 +240,8 @@ export default function Offers() {
             <button
               key={bankId}
               onClick={() => setActiveBank(activeBank === bankId ? 'all' : bankId)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                activeBank === bankId ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'
-              }`}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeBank === bankId ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'
+                }`}
             >
               <div
                 className="w-4 h-4 rounded-md flex items-center justify-center text-white font-black text-[8px]"
@@ -247,99 +255,117 @@ export default function Offers() {
         })}
       </div>
 
-      {/* Highlighted offers */}
-      {highlightedOffers.length > 0 && (
-        <div className="mb-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Flame size={16} className="text-orange-500" />
-            <span className="text-sm font-bold text-gray-900">Destacadas</span>
+      {userBankIds.length === 0 ? (
+        <div className="eliseo-card p-8 text-center border-2 border-dashed border-eliseo-200 mt-8 mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-4">
+            <CreditCard size={28} className="text-eliseo-400" />
           </div>
-          <div className="space-y-3">
-            {highlightedOffers.map(offer => {
-              const bank = getBankById(offer.bank_id)
-              if (!bank) return null
-              return (
-                <div key={offer.id} className="bg-gradient-to-r from-eliseo-50 to-mint-50 rounded-2xl p-4 border border-eliseo-100">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-xs flex-shrink-0 shadow-sm"
-                      style={{ backgroundColor: bank.logo_color }}
-                    >
-                      {bank.logo_text}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold text-gray-900 text-sm">{offer.title}</span>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[offer.category] || 'bg-gray-100 text-gray-600'}`}>
-                          {CATEGORIES.find(c => c.id === offer.category)?.emoji} {CATEGORIES.find(c => c.id === offer.category)?.name}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1 leading-relaxed">{offer.description}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs font-bold text-eliseo-600 bg-eliseo-100 px-2 py-0.5 rounded-full">
-                          {offer.discount_value}
-                        </span>
-                        <span className="text-xs text-gray-400">{formatDate(offer.valid_until)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <h3 className="font-bold text-gray-900 mb-2">Agrega tu primera tarjeta</h3>
+          <p className="text-gray-500 text-sm mb-6 max-w-[260px] mx-auto">
+            Necesitas agregar al menos una tarjeta para descubrir las ofertas y descuentos a los que tienes acceso.
+          </p>
+          <Link to="/add-card" className="eliseo-btn-primary inline-flex">
+            AgregarTarjeta
+          </Link>
         </div>
-      )}
+      ) : (
+        <>
+          {/* Highlighted offers */}
+          {highlightedOffers.length > 0 && (
+            <div className="mb-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Flame size={16} className="text-orange-500" />
+                <span className="text-sm font-bold text-gray-900">Destacadas</span>
+              </div>
+              <div className="space-y-3">
+                {highlightedOffers.map(offer => {
+                  const bank = getBankById(offer.bank_id)
+                  if (!bank) return null
+                  return (
+                    <div key={offer.id} className="bg-gradient-to-r from-eliseo-50 to-mint-50 rounded-2xl p-4 border border-eliseo-100">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-xs flex-shrink-0 shadow-sm"
+                          style={{ backgroundColor: bank.logo_color }}
+                        >
+                          {bank.logo_text}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-gray-900 text-sm">{offer.title}</span>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[offer.category] || 'bg-gray-100 text-gray-600'}`}>
+                              {CATEGORIES.find(c => c.id === offer.category)?.emoji} {CATEGORIES.find(c => c.id === offer.category)?.name}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">{offer.description}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs font-bold text-eliseo-600 bg-eliseo-100 px-2 py-0.5 rounded-full">
+                              {offer.discount_value}
+                            </span>
+                            <span className="text-xs text-gray-400">{formatDate(offer.valid_until)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
-      {/* Regular offers */}
-      {regularOffers.length > 0 && (
-        <div>
-          {highlightedOffers.length > 0 && <h3 className="text-sm font-bold text-gray-900 mb-3">Todas las ofertas</h3>}
-          <div className="space-y-3">
-            {regularOffers.map(offer => {
-              const bank = getBankById(offer.bank_id)
-              if (!bank) return null
-              return (
-                <div key={offer.id} className="eliseo-card p-4">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs flex-shrink-0"
-                      style={{ backgroundColor: bank.logo_color }}
-                    >
-                      {bank.logo_text}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900 text-sm">{offer.title}</div>
-                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{offer.description}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs font-semibold text-gray-600">{offer.discount_value}</span>
-                        <span className="text-xs text-gray-400">{formatDate(offer.valid_until)}</span>
+          {/* Regular offers */}
+          {regularOffers.length > 0 && (
+            <div>
+              {highlightedOffers.length > 0 && <h3 className="text-sm font-bold text-gray-900 mb-3">Todas las ofertas</h3>}
+              <div className="space-y-3">
+                {regularOffers.map(offer => {
+                  const bank = getBankById(offer.bank_id)
+                  if (!bank) return null
+                  return (
+                    <div key={offer.id} className="eliseo-card p-4">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs flex-shrink-0"
+                          style={{ backgroundColor: bank.logo_color }}
+                        >
+                          {bank.logo_text}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 text-sm">{offer.title}</div>
+                          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{offer.description}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs font-semibold text-gray-600">{offer.discount_value}</span>
+                            <span className="text-xs text-gray-400">{formatDate(offer.valid_until)}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
-      {filteredOffers.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-4xl mb-3">🔍</div>
-          <p className="text-gray-500 font-medium">Sin ofertas para ese filtro</p>
-          <button
-            onClick={() => { setActiveCategory('all'); setActiveBank('all') }}
-            className="text-eliseo-500 text-sm font-semibold mt-2"
-          >
-            Ver todas las ofertas
-          </button>
-        </div>
+          {filteredOffers.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-gray-500 font-medium">Sin ofertas por ahora</p>
+              <p className="text-gray-400 text-sm mt-1 mb-4">No encontramos promociones vigentes para tus tarjetas o el filtro seleccionado.</p>
+              <button
+                onClick={() => { setActiveCategory('all'); setActiveBank('all') }}
+                className="text-eliseo-500 text-sm font-semibold mt-2"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Disclaimer */}
       <div className="mt-6 bg-gray-50 rounded-xl p-4">
         <p className="text-xs text-gray-400 text-center leading-relaxed">
-          Los beneficios mostrados son de carácter informativo. Verifica condiciones actualizadas directamente en el sitio de tu banco.
+          Los beneficios mostrados son de carácter informativo. Verifica condiciones actualizadas directamente en el sitio web de tu banco o aplicación oficial.
         </p>
       </div>
     </div>
