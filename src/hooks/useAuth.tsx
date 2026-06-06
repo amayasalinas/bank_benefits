@@ -4,7 +4,11 @@ import { supabase } from '../lib/supabase'
 import { USE_MOCKS } from '../lib/dataSource'
 import { MOCK_USER } from '../mocks/fixtures'
 
-const mockUser = { id: MOCK_USER.id, email: MOCK_USER.email } as User
+const mockUser = {
+  id: MOCK_USER.id,
+  email: MOCK_USER.email,
+  created_at: MOCK_USER.created_at,
+} as User
 
 interface AuthContextType {
   user: User | null

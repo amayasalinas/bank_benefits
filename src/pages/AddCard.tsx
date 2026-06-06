@@ -83,6 +83,7 @@ export default function AddCard() {
       <div className="flex items-center gap-3">
         <button
           onClick={handleBack}
+          aria-label="Volver"
           className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
         >
           <ArrowLeft size={20} className="text-gray-600" />
@@ -105,6 +106,7 @@ export default function AddCard() {
             <input
               type="text"
               placeholder="Buscar banco..."
+              aria-label="Buscar banco"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input-field pl-11"
@@ -158,7 +160,7 @@ export default function AddCard() {
               <div className="flex-1">
                 <p className="font-semibold text-sm text-gray-900">{card.name}</p>
                 <p className="text-xs text-gray-500">
-                  {card.franchise} · {TIER_LABELS[card.tier]} · {card.type === 'credito' ? 'Credito' : 'Debito'}
+                  {card.franchise} · {TIER_LABELS[card.tier]} · {card.type === 'credito' ? 'Crédito' : 'Débito'}
                 </p>
               </div>
               {card.no_annual_fee && (
@@ -194,6 +196,7 @@ export default function AddCard() {
               <input
                 type="text"
                 placeholder="Ej: Mi tarjeta principal"
+                aria-label="Apodo de la tarjeta"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value.slice(0, 40))}
                 className="input-field"
@@ -202,12 +205,13 @@ export default function AddCard() {
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Ultimos 4 digitos (opcional)
+                Últimos 4 dígitos (opcional)
               </label>
               <input
                 type="text"
                 inputMode="numeric"
                 placeholder="1234"
+                aria-label="Últimos 4 dígitos"
                 value={lastFour}
                 onChange={(e) => setLastFour(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 className="input-field"
@@ -226,7 +230,7 @@ export default function AddCard() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-900">Tarjeta principal</p>
-                <p className="text-xs text-gray-500">Se mostrara primero en tu dashboard</p>
+                <p className="text-xs text-gray-500">Se mostrará primero en tu dashboard</p>
               </div>
             </label>
           </div>

@@ -124,7 +124,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <h2 className="section-title">Acciones rapidas</h2>
+        <h2 className="section-title">Acciones rápidas</h2>
         <div className="space-y-2">
           <Link
             to="/recommender"
@@ -134,8 +134,8 @@ export default function Dashboard() {
               <Compass size={20} className="text-eliseo-500" />
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-sm text-gray-900">Cual tarjeta uso?</p>
-              <p className="text-xs text-gray-500">Recomendacion por categoria</p>
+              <p className="font-semibold text-sm text-gray-900">¿Cuál tarjeta uso?</p>
+              <p className="text-xs text-gray-500">Recomendación por categoría</p>
             </div>
             <ChevronRight size={18} className="text-gray-300" />
           </Link>
@@ -161,7 +161,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <h2 className="section-title">Explorar categorias</h2>
+        <h2 className="section-title">Explorar categorías</h2>
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           {CATEGORIES.filter((c) => c.id !== 'general').map((cat) => (
             <Link

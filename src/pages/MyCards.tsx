@@ -24,6 +24,7 @@ export default function MyCards() {
         <h1 className="text-2xl font-bold text-gray-900">Mis tarjetas</h1>
         <Link
           to="/add-card"
+          aria-label="Agregar tarjeta"
           className="w-10 h-10 rounded-xl bg-eliseo-500 flex items-center justify-center text-white shadow-sm active:scale-95 transition-transform"
         >
           <Plus size={20} />
@@ -39,7 +40,7 @@ export default function MyCards() {
           <div className="w-16 h-16 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-4">
             <CreditCard size={28} className="text-eliseo-400" />
           </div>
-          <h3 className="font-bold text-gray-900 mb-1">Sin tarjetas aun</h3>
+          <h3 className="font-bold text-gray-900 mb-1">Sin tarjetas aún</h3>
           <p className="text-sm text-gray-500 mb-5">
             Agrega tus tarjetas para ver sus beneficios y recibir recomendaciones.
           </p>

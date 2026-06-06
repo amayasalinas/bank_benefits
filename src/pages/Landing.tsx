@@ -11,7 +11,7 @@ const features = [
   {
     icon: Compass,
     title: 'Recomendador en tiempo real',
-    description: 'Selecciona una categoria y te decimos cual tarjeta usar para maximizar tu compra.',
+    description: 'Selecciona una categoría y te decimos cuál tarjeta usar para maximizar tu compra.',
   },
   {
     icon: Tag,
@@ -37,11 +37,11 @@ export default function Landing() {
               Maximiza tus tarjetas
             </div>
             <h1 className="text-4xl font-black text-gray-900 leading-tight mb-4">
-              Saca el maximo provecho de{' '}
+              Saca el máximo provecho de{' '}
               <span className="bg-gradient-eliseo gradient-text">tus tarjetas</span>
             </h1>
             <p className="text-gray-500 text-lg mb-8 max-w-md mx-auto">
-              Eliseo te dice cual tarjeta usar en cada compra para que nunca pierdas un beneficio.
+              Eliseo te dice cuál tarjeta usar en cada compra para que nunca pierdas un beneficio.
             </p>
             <Link
               to="/auth"
@@ -80,7 +80,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="px-4 pb-8 text-center">
         <p className="text-xs text-gray-400">
-          Eliseo no almacena numeros de tarjeta ni datos sensibles.
+          Eliseo no almacena números de tarjeta ni datos sensibles.
         </p>
       </footer>
     </div>

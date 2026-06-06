@@ -57,6 +57,7 @@ export default function CardDetail() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
+          aria-label="Volver"
           className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
         >
           <ArrowLeft size={20} className="text-gray-600" />
@@ -64,6 +65,7 @@ export default function CardDetail() {
         <h1 className="text-xl font-bold text-gray-900 flex-1">Detalle</h1>
         <button
           onClick={() => setShowConfirm(true)}
+          aria-label="Eliminar tarjeta"
           className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors"
         >
           <Trash2 size={18} className="text-red-500" />
@@ -91,7 +93,7 @@ export default function CardDetail() {
         </div>
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-white/60 text-[10px]">{card.franchise} · {card.type === 'credito' ? 'Credito' : 'Debito'}</p>
+            <p className="text-white/60 text-[10px]">{card.franchise} · {card.type === 'credito' ? 'Crédito' : 'Débito'}</p>
             <p className="text-sm font-semibold">{TIER_LABELS[card.tier]}</p>
           </div>
           {userCard.last_four && (
@@ -170,7 +172,7 @@ export default function CardDetail() {
       ) : (
         <div className="eliseo-card p-6 text-center">
           <p className="text-sm text-gray-500">
-            No hay beneficios registrados para esta tarjeta aun.
+            No hay beneficios registrados para esta tarjeta aún.
           </p>
         </div>
       )}
@@ -189,9 +191,9 @@ export default function CardDetail() {
             className="bg-white rounded-2xl p-6 w-full max-w-sm"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-bold text-gray-900 text-lg mb-2">Eliminar tarjeta?</h3>
+            <h3 className="font-bold text-gray-900 text-lg mb-2">¿Eliminar tarjeta?</h3>
             <p className="text-sm text-gray-500 mb-5">
-              Se eliminara <strong>{userCard.nickname ?? card.name}</strong> de tu billetera. Puedes agregarla de nuevo despues.
+              Se eliminará <strong>{userCard.nickname ?? card.name}</strong> de tu billetera. Puedes agregarla de nuevo después.
             </p>
             <div className="flex gap-2">
               <button

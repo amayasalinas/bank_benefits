@@ -9,6 +9,7 @@ import type { Bank, Card, Benefit, Offer } from '../types/database'
 export const MOCK_USER = {
   id: 'mock-user-1',
   email: 'sebastian@eliseo.app',
+  created_at: '2026-01-15T00:00:00.000Z',
 }
 
 export const mockBanks: Bank[] = [

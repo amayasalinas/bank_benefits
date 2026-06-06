@@ -14,6 +14,12 @@ export default function Profile() {
     navigate('/', { replace: true })
   }
 
+  const memberDate = user?.created_at ? new Date(user.created_at) : null
+  const memberSince =
+    memberDate && !isNaN(memberDate.getTime())
+      ? memberDate.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+      : null
+
   return (
     <div className="page-container space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Perfil</h1>
@@ -32,9 +38,9 @@ export default function Profile() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 truncate">{user?.email}</p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Miembro desde {new Date(user?.created_at ?? '').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })}
-            </p>
+            {memberSince && (
+              <p className="text-xs text-gray-500 mt-0.5">Miembro desde {memberSince}</p>
+            )}
           </div>
         </div>
       </motion.div>
@@ -80,7 +86,7 @@ export default function Profile() {
         <div>
           <p className="text-sm font-semibold text-gray-900">Tu privacidad</p>
           <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-            Eliseo no almacena numeros de tarjeta, fechas de vencimiento ni CVV. Solo guardamos el banco y modelo de tarjeta para mostrarte beneficios.
+            Eliseo no almacena números de tarjeta, fechas de vencimiento ni CVV. Solo guardamos el banco y modelo de tarjeta para mostrarte beneficios.
           </p>
         </div>
       </motion.div>
@@ -96,7 +102,7 @@ export default function Profile() {
           className="w-full eliseo-card p-4 flex items-center gap-3 text-red-500 hover:bg-red-50 transition-colors"
         >
           <LogOut size={20} />
-          <span className="font-semibold text-sm">Cerrar sesion</span>
+          <span className="font-semibold text-sm">Cerrar sesión</span>
         </button>
       </motion.div>
     </div>

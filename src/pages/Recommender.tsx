@@ -54,7 +54,7 @@ export default function Recommender() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Recomendador</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Selecciona una categoria y te decimos cual tarjeta usar.
+          Selecciona una categoría y te decimos cuál tarjeta usar.
         </p>
       </div>
 
@@ -90,7 +90,7 @@ export default function Recommender() {
               <Trophy size={24} className="text-eliseo-400" />
             </div>
             <p className="text-sm text-gray-500">
-              Elige una categoria para ver cual de tus tarjetas te da el mejor beneficio.
+              Elige una categoría para ver cuál de tus tarjetas te da el mejor beneficio.
             </p>
           </motion.div>
         ) : cards.length === 0 ? (
@@ -122,7 +122,7 @@ export default function Recommender() {
             className="eliseo-card p-6 text-center"
           >
             <p className="text-sm text-gray-500">
-              Ninguna de tus tarjetas tiene beneficios especificos para esta categoria.
+              Ninguna de tus tarjetas tiene beneficios específicos para esta categoría.
               Usa tu tarjeta principal para esta compra.
             </p>
           </motion.div>
@@ -154,7 +154,7 @@ export default function Recommender() {
                     {isTop && (
                       <div className="flex items-center gap-1.5 mb-3">
                         <Trophy size={14} className="text-eliseo-500" />
-                        <span className="text-xs font-bold text-eliseo-500">MEJOR OPCION</span>
+                        <span className="text-xs font-bold text-eliseo-500">MEJOR OPCIÓN</span>
                       </div>
                     )}
                     <div className="flex items-center gap-3 mb-3">

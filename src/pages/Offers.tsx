@@ -152,7 +152,7 @@ export default function Offers() {
                           daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-gray-400'
                         }`}>
                           <Calendar size={10} />
-                          {daysLeft <= 0 ? 'Vence hoy' : `${daysLeft} dia${daysLeft !== 1 ? 's' : ''}`}
+                          {daysLeft <= 0 ? 'Vence hoy' : `${daysLeft} día${daysLeft !== 1 ? 's' : ''}`}
                         </span>
                       )}
                     </div>

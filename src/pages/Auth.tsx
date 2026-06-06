@@ -25,13 +25,13 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await signIn(email, password)
         if (error) {
-          setError('Correo o contrasena incorrectos.')
+          setError('Correo o contraseña incorrectos.')
         } else {
           navigate('/dashboard', { replace: true })
         }
       } else {
         if (password.length < 6) {
-          setError('La contrasena debe tener al menos 6 caracteres.')
+          setError('La contraseña debe tener al menos 6 caracteres.')
           setLoading(false)
           return
         }
@@ -60,7 +60,7 @@ export default function Auth() {
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Revisa tu correo</h2>
           <p className="text-sm text-gray-500 mb-6">
-            Enviamos un enlace de confirmacion a <strong>{email}</strong>. Haz clic en el para activar tu cuenta.
+            Enviamos un enlace de confirmación a <strong>{email}</strong>. Haz clic en él para activar tu cuenta.
           </p>
           <button
             onClick={() => {
@@ -69,7 +69,7 @@ export default function Auth() {
             }}
             className="eliseo-btn-secondary w-full"
           >
-            Volver a iniciar sesion
+            Volver a iniciar sesión
           </button>
         </motion.div>
       </div>
@@ -113,7 +113,8 @@ export default function Auth() {
               <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="email"
-                placeholder="Correo electronico"
+                placeholder="Correo electrónico"
+                aria-label="Correo electrónico"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -125,7 +126,8 @@ export default function Auth() {
               <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Contrasena"
+                placeholder="Contraseña"
+                aria-label="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -134,6 +136,7 @@ export default function Auth() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -158,13 +161,13 @@ export default function Auth() {
               {loading
                 ? 'Cargando...'
                 : isLogin
-                  ? 'Iniciar sesion'
+                  ? 'Iniciar sesión'
                   : 'Crear cuenta'}
             </button>
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            {isLogin ? 'No tienes cuenta?' : 'Ya tienes cuenta?'}{' '}
+            {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
             <button
               onClick={() => {
                 setIsLogin(!isLogin)
@@ -172,7 +175,7 @@ export default function Auth() {
               }}
               className="text-eliseo-500 font-semibold hover:text-eliseo-600 transition-colors"
             >
-              {isLogin ? 'Registrate' : 'Inicia sesion'}
+              {isLogin ? 'Regístrate' : 'Inicia sesión'}
             </button>
           </p>
         </motion.div>
