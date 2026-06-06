@@ -4,7 +4,7 @@
  * Respetan los tipos de src/types/database.ts (el "contrato" con la BD).
  * Subconjunto curado y realista del catálogo en datos-eliseo/*.csv.
  */
-import type { Bank, Card, Benefit, Offer } from '../types/database'
+import type { Bank, Card, Benefit, Offer, ConfidenceLevel } from '../types/database'
 
 export const MOCK_USER = {
   id: 'mock-user-1',
@@ -197,7 +197,8 @@ const benefit = (
   value_type: Benefit['value_type'],
   value_label: string,
   numeric_value: number | null = null,
-  conditions: string | null = null
+  conditions: string | null = null,
+  confidence: ConfidenceLevel = 'confirmado'
 ): Benefit => ({
   id,
   card_id,
@@ -212,21 +213,22 @@ const benefit = (
   conditions,
   source: null,
   status: 'verificado',
+  confidence,
 })
 
 export const mockBenefits: Benefit[] = [
   // Amex Platinum (Bancolombia)
   benefit('m1', 'ban-amex-platinum', 'bancolombia', 'American Express Platinum', 'viajes', 'Priority Pass', 'Acceso ilimitado a +1.200 salas VIP en aeropuertos', 'lounge_access', 'Acceso ilimitado', 1, 'Titular y acompañante'),
   benefit('m2', 'ban-amex-platinum', 'bancolombia', 'American Express Platinum', 'seguros', 'Seguro de viaje', 'Cobertura médica hasta USD 1.000.000 en el exterior', 'fixed_benefit', 'Incluido', null, 'Viajes pagados con la tarjeta'),
-  benefit('m3', 'ban-amex-platinum', 'bancolombia', 'American Express Platinum', 'entretenimiento', '2x1 en cines', 'Dos entradas por el precio de una en cines aliados', 'discount_percent', '50% dcto', 50, 'Cines aliados, una vez por semana'),
+  benefit('m3', 'ban-amex-platinum', 'bancolombia', 'American Express Platinum', 'entretenimiento', '2x1 en cines', 'Dos entradas por el precio de una en cines aliados', 'discount_percent', '50% dcto', 50, 'Cines aliados, una vez por semana', 'accion'),
   benefit('m4', 'ban-amex-platinum', 'bancolombia', 'American Express Platinum', 'puntos', 'Puntos Colombia', 'Acumulación premium en todas tus compras', 'points_multiplier', 'x2 puntos', 2, 'Todas las compras'),
-  benefit('m5', 'ban-amex-platinum', 'bancolombia', 'American Express Platinum', 'restaurantes', 'Amex Dining', 'Beneficios y reservas en restaurantes seleccionados', 'discount_percent', '15% dcto', 15, 'Restaurantes aliados'),
+  benefit('m5', 'ban-amex-platinum', 'bancolombia', 'American Express Platinum', 'restaurantes', 'Amex Dining', 'Beneficios y reservas en restaurantes seleccionados', 'discount_percent', '15% dcto', 15, 'Restaurantes aliados', 'probable'),
   // Davivienda Visa Signature
   benefit('m6', 'dav-visa-signature', 'davivienda', 'Visa Signature', 'viajes', 'Salas VIP LoungeKey', '6 ingresos al año a salas VIP', 'lounge_access', '6 visitas/año', 1, 'Titular'),
   benefit('m7', 'dav-visa-signature', 'davivienda', 'Visa Signature', 'cashback', 'Cashback compras', 'Devolución sobre compras en comercios aliados', 'cashback_percent', '3% cashback', 3, 'Comercios aliados'),
   benefit('m8', 'dav-visa-signature', 'davivienda', 'Visa Signature', 'supermercados', 'Descuento mercados', 'Descuento en cadenas de supermercados', 'discount_percent', '8% dcto', 8, 'Martes y jueves'),
   // Nu
-  benefit('m9', 'nu-mc', 'nu', 'Tarjeta Nu', 'cashback', 'Cashback Nu', 'Devolución diaria que genera rendimientos', 'cashback_percent', 'Hasta 5%', 5, 'Comercios seleccionados'),
+  benefit('m9', 'nu-mc', 'nu', 'Tarjeta Nu', 'cashback', 'Cashback Nu', 'Devolución diaria que genera rendimientos', 'cashback_percent', 'Hasta 5%', 5, 'Comercios seleccionados', 'probable'),
   benefit('m10', 'nu-mc', 'nu', 'Tarjeta Nu', 'streaming', 'Suscripciones', 'Sin cuota de manejo en tus pagos de streaming', 'fixed_benefit', 'Sin cuota', null, null),
   benefit('m11', 'nu-mc', 'nu', 'Tarjeta Nu', 'general', 'Cero cuota de manejo', 'Tarjeta sin costo de manejo mensual', 'fixed_benefit', '$0 cuota', null, null),
   // BBVA Visa Infinite (catálogo)
@@ -239,12 +241,53 @@ export const mockBenefits: Benefit[] = [
 
 /** Ofertas activas. Fechas futuras relativas a mediados de 2026. */
 export const mockOffers: Offer[] = [
-  { id: 'o1', bank_id: 'bancolombia', title: '20% en restaurantes', description: 'Descuento en restaurantes aliados pagando con tarjetas Bancolombia.', category: 'restaurantes', valid_until: '2026-06-30' },
-  { id: 'o2', bank_id: 'davivienda', title: '3 cuotas sin interés', description: 'Difiere tus compras de tecnología a 3 meses sin interés.', category: 'general', valid_until: '2026-07-15' },
-  { id: 'o3', bank_id: 'nu', title: 'Cashback doble en streaming', description: 'Duplica tu cashback en suscripciones de streaming este mes.', category: 'streaming', valid_until: '2026-06-20' },
-  { id: 'o4', bank_id: 'bbva', title: '15% en combustible', description: 'Devolución especial en estaciones de servicio aliadas.', category: 'combustible', valid_until: '2026-08-01' },
-  { id: 'o5', bank_id: 'colpatria', title: 'Millas dobles', description: 'Acumula el doble de millas en compras internacionales.', category: 'viajes', valid_until: null },
-  { id: 'o6', bank_id: 'davivienda', title: '10% en supermercados', description: 'Descuento en cadenas de supermercados los fines de semana.', category: 'supermercados', valid_until: '2026-06-12' },
+  { id: 'o1', bank_id: 'bancolombia', title: '20% en restaurantes', description: 'Descuento en restaurantes aliados pagando con tarjetas Bancolombia.', category: 'restaurantes', valid_until: '2026-06-30', url: 'https://www.bancolombia.com/personas/promociones', confidence: 'confirmado' },
+  { id: 'o2', bank_id: 'davivienda', title: '3 cuotas sin interés', description: 'Difiere tus compras de tecnología a 3 meses sin interés.', category: 'general', valid_until: '2026-07-15', url: 'https://www.davivienda.com/personas/promociones', confidence: 'accion' },
+  { id: 'o3', bank_id: 'nu', title: 'Cashback doble en streaming', description: 'Duplica tu cashback en suscripciones de streaming este mes.', category: 'streaming', valid_until: '2026-06-20', url: 'https://nu.com.co/', confidence: 'confirmado' },
+  { id: 'o4', bank_id: 'bbva', title: '15% en combustible', description: 'Devolución especial en estaciones de servicio aliadas.', category: 'combustible', valid_until: '2026-08-01', url: 'https://www.bbva.com.co/personas/promociones.html', confidence: 'probable' },
+  { id: 'o5', bank_id: 'colpatria', title: 'Millas dobles', description: 'Acumula el doble de millas en compras internacionales con clientes seleccionados.', category: 'viajes', valid_until: null, url: 'https://www.scotiabankcolpatria.com/promociones', confidence: 'probable' },
+  { id: 'o6', bank_id: 'davivienda', title: '10% en supermercados', description: 'Descuento en cadenas de supermercados los fines de semana.', category: 'supermercados', valid_until: '2026-06-12', url: 'https://www.davivienda.com/personas/promociones', confidence: 'confirmado' },
+]
+
+/** Tarjeta destacada ("Mejores del mercado") con gancho de afiliado. */
+export interface FeaturedCard {
+  card: Card & { bank: Bank }
+  reason: string
+  highlight: string
+  applyUrl: string
+}
+
+const cardWithBank = (cardId: string) => {
+  const card = mockCards.find((c) => c.id === cardId)!
+  const bank = mockBanks.find((b) => b.id === card.bank_id)!
+  return { ...card, bank }
+}
+
+export const mockFeatured: FeaturedCard[] = [
+  {
+    card: cardWithBank('ban-amex-platinum'),
+    reason: 'La mejor para viajeros frecuentes',
+    highlight: 'Salas VIP ilimitadas + seguro de viaje hasta USD 1.000.000',
+    applyUrl: 'https://www.bancolombia.com/tarjetas-de-credito',
+  },
+  {
+    card: cardWithBank('nu-mc'),
+    reason: 'La mejor sin cuota de manejo',
+    highlight: 'Hasta 5% de cashback y $0 de cuota mensual',
+    applyUrl: 'https://nu.com.co/tarjeta-de-credito/',
+  },
+  {
+    card: cardWithBank('dav-visa-signature'),
+    reason: 'El mejor equilibrio cashback + viajes',
+    highlight: '3% de cashback y 6 ingresos/año a salas VIP',
+    applyUrl: 'https://www.davivienda.com/personas/tarjetas-de-credito',
+  },
+  {
+    card: cardWithBank('bbva-visa-infinite'),
+    reason: 'La mejor para combustible',
+    highlight: '4% de cashback en estaciones de servicio + salas VIP',
+    applyUrl: 'https://www.bbva.com.co/personas/productos/tarjetas',
+  },
 ]
 
 /** Tarjetas iniciales en la cartera del usuario mock (referencias al catálogo). */

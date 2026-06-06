@@ -34,6 +34,11 @@ export type ValueType =
   | 'discount_percent'
   | 'fixed_benefit'
 
+// Nivel de confianza de un beneficio/oferta (PRD v2 — Parte VIII).
+// 'confirmado' = validado doble fuente · 'probable' = depende de elegibilidad
+// · 'accion' = requiere inscripción/diferir. Campo opcional y aditivo.
+export type ConfidenceLevel = 'confirmado' | 'probable' | 'accion'
+
 export interface Bank {
   id: string
   name: string
@@ -72,6 +77,7 @@ export interface Benefit {
   conditions: string | null
   source: string | null
   status: string
+  confidence?: ConfidenceLevel
 }
 
 export interface FranchiseBenefit {
@@ -107,6 +113,8 @@ export interface Offer {
   description: string
   category: BenefitCategory
   valid_until: string | null
+  url?: string | null
+  confidence?: ConfidenceLevel
 }
 
 export interface CategoryInfo {

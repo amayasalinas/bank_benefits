@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { ExternalLink, Calendar, Tag } from 'lucide-react'
 import { fetchOffers } from '../lib/dataSource'
 import { CATEGORIES } from '../types/database'
+import ConfidenceBadge from '../components/ConfidenceBadge'
 import type { Offer, Bank, BenefitCategory } from '../types/database'
 
 export default function Offers() {
@@ -118,46 +119,66 @@ export default function Offers() {
               ? Math.ceil((new Date(offer.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
               : null
 
+            const inner = (
+              <>
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: offer.bank.logo_color + '20' }}
+                >
+                  <span className="font-black text-xs" style={{ color: offer.bank.logo_color }}>
+                    {offer.bank.short_name.substring(0, 2).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-semibold text-sm text-gray-900">{offer.title}</p>
+                    {cat && (
+                      <span className="text-[10px] bg-eliseo-50 text-eliseo-600 font-semibold px-1.5 py-0.5 rounded-full">
+                        {cat.emoji} {cat.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">{offer.description}</p>
+                  <div className="flex items-center gap-2 flex-wrap mt-2">
+                    <span className="text-[11px] text-gray-400">{offer.bank.short_name}</span>
+                    {daysLeft !== null && (
+                      <span className={`text-[11px] font-medium flex items-center gap-1 ${
+                        daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-gray-400'
+                      }`}>
+                        <Calendar size={10} />
+                        {daysLeft <= 0 ? 'Vence hoy' : `${daysLeft} día${daysLeft !== 1 ? 's' : ''}`}
+                      </span>
+                    )}
+                    {offer.confidence && <ConfidenceBadge level={offer.confidence} />}
+                  </div>
+                </div>
+                {offer.url && (
+                  <ExternalLink size={16} className="text-eliseo-400 flex-shrink-0 mt-0.5" aria-hidden />
+                )}
+              </>
+            )
+
             return (
               <motion.div
                 key={offer.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="eliseo-card p-4"
+                className={`eliseo-card p-4 ${offer.url ? 'hover:shadow-card-hover transition-shadow' : ''}`}
               >
-                <div className="flex items-start gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: offer.bank.logo_color + '20' }}
+                {offer.url ? (
+                  <a
+                    href={offer.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-3"
+                    aria-label={`${offer.title} — abrir en ${offer.bank.short_name}`}
                   >
-                    <span className="font-black text-xs" style={{ color: offer.bank.logo_color }}>
-                      {offer.bank.short_name.substring(0, 2).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-semibold text-sm text-gray-900">{offer.title}</p>
-                      {cat && (
-                        <span className="text-[10px] bg-eliseo-50 text-eliseo-600 font-semibold px-1.5 py-0.5 rounded-full">
-                          {cat.emoji} {cat.name}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 leading-relaxed">{offer.description}</p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className="text-[11px] text-gray-400">{offer.bank.short_name}</span>
-                      {daysLeft !== null && (
-                        <span className={`text-[11px] font-medium flex items-center gap-1 ${
-                          daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-gray-400'
-                        }`}>
-                          <Calendar size={10} />
-                          {daysLeft <= 0 ? 'Vence hoy' : `${daysLeft} día${daysLeft !== 1 ? 's' : ''}`}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                    {inner}
+                  </a>
+                ) : (
+                  <div className="flex items-start gap-3">{inner}</div>
+                )}
               </motion.div>
             )
           })}

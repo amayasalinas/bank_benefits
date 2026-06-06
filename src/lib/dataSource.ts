@@ -4,7 +4,8 @@
  * cuando VITE_USE_MOCKS === 'true' devuelve fixtures y NO toca Supabase.
  */
 import { supabase } from './supabase'
-import { mockBanks, mockCards, mockOffers } from '../mocks/fixtures'
+import { mockBanks, mockCards, mockOffers, mockFeatured } from '../mocks/fixtures'
+import type { FeaturedCard } from '../mocks/fixtures'
 import type { Bank, Card, Offer } from '../types/database'
 
 export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
@@ -54,4 +55,15 @@ export async function fetchOffers(): Promise<{
     offers: (offersRes.data as (Offer & { bank: Bank })[]) ?? [],
     banks: banksRes.data ?? [],
   }
+}
+
+/**
+ * Tarjetas destacadas ("Mejores del mercado").
+ * En mock devuelve una selección curada. Contra Supabase, la curación de
+ * destacados aún no tiene tabla → devuelve [] (pantalla con estado vacío)
+ * hasta definir el esquema de afiliados.
+ */
+export async function fetchFeatured(): Promise<FeaturedCard[]> {
+  if (USE_MOCKS) return mockFeatured
+  return []
 }

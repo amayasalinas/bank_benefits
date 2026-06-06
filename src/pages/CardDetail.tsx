@@ -4,6 +4,7 @@ import { ArrowLeft, Star, Trash2, ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { useUserCards } from '../hooks/useUserCards'
 import { TIER_LABELS, CATEGORIES } from '../types/database'
+import ConfidenceBadge from '../components/ConfidenceBadge'
 
 export default function CardDetail() {
   const { cardId } = useParams<{ cardId: string }>()
@@ -156,6 +157,9 @@ export default function CardDetail() {
                           <p className="text-xs text-gray-500 mt-0.5">{benefit.description}</p>
                           {benefit.conditions && (
                             <p className="text-[11px] text-gray-400 mt-1">{benefit.conditions}</p>
+                          )}
+                          {benefit.confidence && (
+                            <ConfidenceBadge level={benefit.confidence} className="mt-1.5" />
                           )}
                         </div>
                         <span className="text-xs font-bold text-eliseo-500 bg-eliseo-50 px-2 py-1 rounded-lg whitespace-nowrap">

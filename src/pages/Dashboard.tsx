@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Plus, CreditCard, Compass, ChevronRight, Star } from 'lucide-react'
+import { Plus, CreditCard, Compass, ChevronRight, Star, Trophy } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useUserCards } from '../hooks/useUserCards'
 import { CATEGORIES, TIER_LABELS } from '../types/database'
@@ -149,6 +149,19 @@ export default function Dashboard() {
             <div className="flex-1">
               <p className="font-semibold text-sm text-gray-900">Agregar tarjeta</p>
               <p className="text-xs text-gray-500">Suma otra tarjeta a tu billetera</p>
+            </div>
+            <ChevronRight size={18} className="text-gray-300" />
+          </Link>
+          <Link
+            to="/destacados"
+            className="eliseo-card p-4 flex items-center gap-3 hover:shadow-card-hover transition-shadow"
+          >
+            <div className="w-10 h-10 rounded-xl bg-coral-500/10 flex items-center justify-center">
+              <Trophy size={20} className="text-coral-500" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-sm text-gray-900">Mejores del mercado</p>
+              <p className="text-xs text-gray-500">Descubre las mejores tarjetas para ti</p>
             </div>
             <ChevronRight size={18} className="text-gray-300" />
           </Link>
