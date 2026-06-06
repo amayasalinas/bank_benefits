@@ -1,38 +1,55 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, ChevronRight, X, Search } from 'lucide-react'
-import { BANKS, getCardsByBank } from '../data/banks'
+import { motion } from 'framer-motion'
+import { ArrowLeft, Search, Check, CreditCard } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 import { useUserCards } from '../hooks/useUserCards'
-import CreditCardVisual from '../components/CreditCardVisual'
-import type { Bank, Card } from '../types'
-import { TIER_LABELS } from '../types'
+import type { Bank, Card } from '../types/database'
+import { TIER_LABELS } from '../types/database'
 
 type Step = 'bank' | 'card' | 'details'
 
 export default function AddCard() {
   const navigate = useNavigate()
-  const { addCard, userCards } = useUserCards()
+  const { addCard } = useUserCards()
 
   const [step, setStep] = useState<Step>('bank')
+  const [banks, setBanks] = useState<Bank[]>([])
+  const [cards, setCards] = useState<Card[]>([])
+  const [search, setSearch] = useState('')
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [nickname, setNickname] = useState('')
   const [lastFour, setLastFour] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [bankSearch, setBankSearch] = useState('')
+  const [isPrimary, setIsPrimary] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  const filteredBanks = BANKS.filter(b =>
-    b.name.toLowerCase().includes(bankSearch.toLowerCase()) ||
-    b.short_name.toLowerCase().includes(bankSearch.toLowerCase())
+  useEffect(() => {
+    supabase
+      .from('banks')
+      .select('*')
+      .order('name')
+      .then(({ data }) => setBanks(data ?? []))
+  }, [])
+
+  useEffect(() => {
+    if (!selectedBank) return
+    supabase
+      .from('cards')
+      .select('*')
+      .eq('bank_id', selectedBank.id)
+      .order('name')
+      .then(({ data }) => setCards(data ?? []))
+  }, [selectedBank])
+
+  const filteredBanks = banks.filter((b) =>
+    b.name.toLowerCase().includes(search.toLowerCase()) ||
+    b.short_name.toLowerCase().includes(search.toLowerCase())
   )
-
-  const bankCards = selectedBank ? getCardsByBank(selectedBank.id) : []
-  const addedCardIds = userCards.map(uc => uc.card_id)
 
   const handleSelectBank = (bank: Bank) => {
     setSelectedBank(bank)
-    setSelectedCard(null)
+    setSearch('')
     setStep('card')
   }
 
@@ -41,292 +58,196 @@ export default function AddCard() {
     setStep('details')
   }
 
-  const handleAdd = async () => {
+  const handleSave = async () => {
     if (!selectedCard) return
-    setError(null)
-    setLoading(true)
-    const { error } = await addCard(selectedCard.id, nickname, lastFour)
-    setLoading(false)
-    if (error) {
-      setError(error)
-    } else {
-      navigate('/my-cards')
+    setSaving(true)
+    const { error } = await addCard(
+      selectedCard.id,
+      nickname || undefined,
+      lastFour || undefined,
+      isPrimary
+    )
+    setSaving(false)
+    if (!error) {
+      navigate('/my-cards', { replace: true })
     }
   }
 
-  const STEPS_LABELS = { bank: 1, card: 2, details: 3 }
-  const currentStep = STEPS_LABELS[step]
+  const handleBack = () => {
+    if (step === 'details') {
+      setSelectedCard(null)
+      setStep('card')
+    } else if (step === 'card') {
+      setSelectedBank(null)
+      setCards([])
+      setStep('bank')
+    } else {
+      navigate(-1)
+    }
+  }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 pb-8 pt-4 min-h-screen">
-      {/* Progress */}
-      <div className="flex items-center gap-2 mb-6">
-        {[
-          { n: 1, label: 'Banco' },
-          { n: 2, label: 'Tarjeta' },
-          { n: 3, label: 'Detalles' },
-        ].map(({ n, label }, i) => (
-          <div key={n} className="flex items-center gap-2 flex-1">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-all ${
-              currentStep > n ? 'bg-mint-500 text-white' :
-              currentStep === n ? 'bg-eliseo-500 text-white' :
-              'bg-gray-200 text-gray-400'
-            }`}>
-              {currentStep > n ? <Check size={14} /> : n}
-            </div>
-            <span className={`text-xs font-medium ${currentStep === n ? 'text-eliseo-600' : 'text-gray-400'}`}>
-              {label}
-            </span>
-            {i < 2 && <div className={`flex-1 h-0.5 rounded ${currentStep > n ? 'bg-mint-400' : 'bg-gray-200'}`} />}
-          </div>
-        ))}
+    <div className="page-container space-y-5">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={handleBack}
+          className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+        >
+          <ArrowLeft size={20} className="text-gray-600" />
+        </button>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Agregar tarjeta</h1>
+          <p className="text-xs text-gray-500">
+            {step === 'bank' && 'Selecciona tu banco'}
+            {step === 'card' && `Tarjetas de ${selectedBank?.short_name}`}
+            {step === 'details' && 'Detalles opcionales'}
+          </p>
+        </div>
       </div>
 
-      {/* STEP 1: Select Bank */}
+      {/* Step: Bank */}
       {step === 'bank' && (
-        <div className="animate-fade-in">
-          <h2 className="text-xl font-black text-gray-900 mb-1">Selecciona tu banco</h2>
-          <p className="text-gray-500 text-sm mb-4">¿De qué banco es tu tarjeta?</p>
-
-          <div className="relative mb-4">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+          <div className="relative">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar banco..."
-              value={bankSearch}
-              onChange={e => setBankSearch(e.target.value)}
-              className="input-field pl-10"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-field pl-11"
+              autoFocus
             />
           </div>
-
-          <div className="grid grid-cols-1 gap-3">
-            {/* Traditional banks */}
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Bancos tradicionales</p>
-              <div className="space-y-2">
-                {filteredBanks.filter(b => !b.is_digital).map(bank => (
-                  <button
-                    key={bank.id}
-                    onClick={() => handleSelectBank(bank)}
-                    className="w-full flex items-center gap-3 eliseo-card p-4 hover:shadow-card-hover hover:border-eliseo-200 transition-all duration-200 active:scale-[0.99] text-left"
-                  >
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm"
-                      style={{ backgroundColor: bank.logo_color }}
-                    >
-                      {bank.logo_text}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-gray-900 text-sm">{bank.name}</div>
-                      <div className="text-xs text-gray-400 mt-0.5">{bank.loyalty_program}</div>
-                    </div>
-                    <div className="text-xs text-gray-300 flex-shrink-0">
-                      {getCardsByBank(bank.id).length} tarjetas
-                    </div>
-                    <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Digital banks */}
-            {filteredBanks.filter(b => b.is_digital).length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 mt-4">Bancos digitales y fintech</p>
-                <div className="space-y-2">
-                  {filteredBanks.filter(b => b.is_digital).map(bank => (
-                    <button
-                      key={bank.id}
-                      onClick={() => handleSelectBank(bank)}
-                      className="w-full flex items-center gap-3 eliseo-card p-4 hover:shadow-card-hover hover:border-eliseo-200 transition-all duration-200 active:scale-[0.99] text-left"
-                    >
-                      <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm"
-                        style={{ backgroundColor: bank.logo_color }}
-                      >
-                        {bank.logo_text}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 text-sm">{bank.name}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">{bank.loyalty_program}</div>
-                      </div>
-                      <div className="text-xs text-eliseo-400 font-medium flex-shrink-0 bg-eliseo-50 px-2 py-0.5 rounded-full">
-                        Digital
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-                    </button>
-                  ))}
+          <div className="space-y-2">
+            {filteredBanks.map((bank) => (
+              <button
+                key={bank.id}
+                onClick={() => handleSelectBank(bank)}
+                className="w-full eliseo-card p-4 flex items-center gap-3 hover:shadow-card-hover transition-shadow text-left"
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: bank.logo_color + '20' }}
+                >
+                  <span className="font-black text-sm" style={{ color: bank.logo_color }}>
+                    {bank.short_name.substring(0, 2).toUpperCase()}
+                  </span>
                 </div>
-              </div>
-            )}
+                <div className="flex-1">
+                  <p className="font-semibold text-sm text-gray-900">{bank.name}</p>
+                  {bank.loyalty_program && (
+                    <p className="text-xs text-gray-500">{bank.loyalty_program}</p>
+                  )}
+                </div>
+                {bank.is_digital && (
+                  <span className="text-[10px] font-semibold text-eliseo-500 bg-eliseo-50 px-2 py-0.5 rounded-full">
+                    Digital
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* STEP 2: Select Card */}
-      {step === 'card' && selectedBank && (
-        <div className="animate-fade-in">
-          <div className="flex items-center gap-3 mb-4">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs shadow-sm"
-              style={{ backgroundColor: selectedBank.logo_color }}
+      {/* Step: Card */}
+      {step === 'card' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
+          {cards.map((card) => (
+            <button
+              key={card.id}
+              onClick={() => handleSelectCard(card)}
+              className="w-full eliseo-card p-4 flex items-center gap-3 hover:shadow-card-hover transition-shadow text-left"
             >
-              {selectedBank.logo_text}
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-gray-900">{selectedBank.name}</h2>
-              <p className="text-gray-500 text-sm">Selecciona tu tarjeta</p>
-            </div>
+              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <CreditCard size={18} className="text-gray-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-sm text-gray-900">{card.name}</p>
+                <p className="text-xs text-gray-500">
+                  {card.franchise} · {TIER_LABELS[card.tier]} · {card.type === 'credito' ? 'Credito' : 'Debito'}
+                </p>
+              </div>
+              {card.no_annual_fee && (
+                <span className="text-[10px] font-semibold text-mint-500 bg-mint-50 px-2 py-0.5 rounded-full">
+                  Sin cuota
+                </span>
+              )}
+            </button>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Step: Details */}
+      {step === 'details' && selectedCard && selectedBank && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+          {/* Card preview */}
+          <div
+            className="rounded-2xl p-5 text-white"
+            style={{ background: selectedBank.logo_color }}
+          >
+            <p className="text-white/70 text-xs">{selectedBank.short_name}</p>
+            <p className="font-bold text-lg mt-1">{selectedCard.name}</p>
+            <p className="text-white/60 text-xs mt-3">
+              {selectedCard.franchise} · {TIER_LABELS[selectedCard.tier]}
+            </p>
           </div>
 
           <div className="space-y-3">
-            {bankCards.map(card => {
-              const isAdded = addedCardIds.includes(card.id)
-              return (
-                <button
-                  key={card.id}
-                  onClick={() => !isAdded && handleSelectCard(card)}
-                  disabled={isAdded}
-                  className={`w-full text-left transition-all duration-200 ${isAdded ? 'opacity-50 cursor-default' : 'active:scale-[0.99]'}`}
-                >
-                  <div className={`eliseo-card overflow-hidden ${!isAdded ? 'hover:shadow-card-hover hover:border-eliseo-200' : ''}`}>
-                    <div className="flex items-center gap-4 p-4">
-                      {/* Mini card visual */}
-                      <div
-                        className="w-16 h-10 rounded-lg flex-shrink-0 relative overflow-hidden"
-                        style={{ background: card.gradient }}
-                      >
-                        <div className="absolute bottom-1 right-1 text-white/70 text-[8px] font-mono">
-                          {card.franchise}
-                        </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 text-sm truncate">{card.name}</div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-gray-400">{card.franchise}</span>
-                          <span className="text-gray-200">·</span>
-                          <span className="text-xs text-gray-400 capitalize">{card.type === 'credit' ? 'Crédito' : 'Débito'}</span>
-                          <span className="text-gray-200">·</span>
-                          <span
-                            className="text-xs font-semibold px-1.5 py-0.5 rounded-full"
-                            style={{
-                              background: card.tier === 'black' ? '#1a1a1a' :
-                                card.tier === 'gold' ? '#DAA520' :
-                                card.tier === 'platinum' ? '#667eea' :
-                                card.tier === 'infinite' ? '#302b63' :
-                                '#E8E9F5',
-                              color: ['black', 'gold', 'platinum', 'infinite', 'signature'].includes(card.tier) ? 'white' : '#5B4CF5',
-                            }}
-                          >
-                            {TIER_LABELS[card.tier] || card.tier}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-400 mt-0.5 truncate">{card.annual_fee_note}</div>
-                      </div>
-                      <div className="flex-shrink-0">
-                        {isAdded ? (
-                          <div className="w-6 h-6 bg-mint-500 rounded-full flex items-center justify-center">
-                            <Check size={12} className="text-white" />
-                          </div>
-                        ) : (
-                          <ChevronRight size={16} className="text-gray-300" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-
-          <button
-            onClick={() => setStep('bank')}
-            className="mt-4 w-full py-3 text-gray-500 text-sm font-medium hover:text-gray-700 transition-colors"
-          >
-            ← Cambiar banco
-          </button>
-        </div>
-      )}
-
-      {/* STEP 3: Details */}
-      {step === 'details' && selectedCard && selectedBank && (
-        <div className="animate-fade-in">
-          <h2 className="text-xl font-black text-gray-900 mb-1">Últimos detalles</h2>
-          <p className="text-gray-500 text-sm mb-6">Opcional: personaliza tu tarjeta</p>
-
-          {/* Card preview */}
-          <div className="flex justify-center mb-6">
-            <CreditCardVisual
-              card={selectedCard}
-              bank={selectedBank}
-              size="lg"
-              showLastFour={lastFour || undefined}
-              className="w-full max-w-sm"
-            />
-          </div>
-
-          <div className="space-y-4 mb-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Últimos 4 dígitos <span className="text-gray-400 font-normal">(opcional)</span>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Apodo (opcional)
               </label>
               <input
                 type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                placeholder="1234"
-                value={lastFour}
-                onChange={e => setLastFour(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                className="input-field text-center text-lg tracking-widest font-mono"
-              />
-              <p className="text-xs text-gray-400 mt-1">Solo para identificar tu tarjeta. Nunca almacenamos datos sensibles.</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Nombre personalizado <span className="text-gray-400 font-normal">(opcional)</span>
-              </label>
-              <input
-                type="text"
-                placeholder='Ej: "Mi tarjeta favorita"'
+                placeholder="Ej: Mi tarjeta principal"
                 value={nickname}
-                onChange={e => setNickname(e.target.value)}
+                onChange={(e) => setNickname(e.target.value.slice(0, 40))}
                 className="input-field"
                 maxLength={40}
               />
             </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Ultimos 4 digitos (opcional)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="1234"
+                value={lastFour}
+                onChange={(e) => setLastFour(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                className="input-field"
+                maxLength={4}
+              />
+            </div>
+            <label className="flex items-center gap-3 eliseo-card p-4 cursor-pointer">
+              <div
+                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
+                  isPrimary
+                    ? 'bg-eliseo-500 border-eliseo-500'
+                    : 'border-gray-300'
+                }`}
+              >
+                {isPrimary && <Check size={14} className="text-white" />}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Tarjeta principal</p>
+                <p className="text-xs text-gray-500">Se mostrara primero en tu dashboard</p>
+              </div>
+            </label>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl p-3 mb-4 flex items-center gap-2">
-              <X size={14} />
-              {error}
-            </div>
-          )}
-
           <button
-            onClick={handleAdd}
-            disabled={loading}
-            className="w-full eliseo-btn-primary py-4 text-base flex items-center justify-center gap-2 disabled:opacity-60"
+            onClick={handleSave}
+            disabled={saving}
+            className="eliseo-btn-primary w-full disabled:opacity-50"
           >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                <Check size={18} />
-                Agregar a mi cartera
-              </>
-            )}
+            {saving ? 'Guardando...' : 'Guardar tarjeta'}
           </button>
-
-          <button
-            onClick={() => setStep('card')}
-            className="mt-3 w-full py-3 text-gray-500 text-sm font-medium hover:text-gray-700 transition-colors"
-          >
-            ← Cambiar tarjeta
-          </button>
-        </div>
+        </motion.div>
       )}
     </div>
   )

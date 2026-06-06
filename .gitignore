@@ -40,3 +40,9 @@ lerna-debug.log*
 
 # PDFs (large files)
 *.pdf
+
+# Python cache
+__pycache__/
+
+# OneDrive sync conflict copies (e.g. *-SAPXPS.tsx)
+*-SAPXPS*

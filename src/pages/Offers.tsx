@@ -1,222 +1,105 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { Tag, ExternalLink, ChevronRight, Flame, CreditCard } from 'lucide-react'
-import { BANKS, getBankById } from '../data/banks'
-import type { BenefitCategory } from '../types'
-import { CATEGORIES } from '../types'
-import { useUserCards } from '../hooks/useUserCards'
-
-interface Offer {
-  id: string
-  bank_id: string
-  title: string
-  description: string
-  discount_value: string
-  category: BenefitCategory
-  valid_until: string | null
-  url: string
-  highlight?: boolean
-}
-
-const DEMO_OFFERS: Offer[] = [
-  {
-    id: '1',
-    bank_id: 'bbva',
-    title: 'Puntos dobles en restaurantes',
-    description: 'Cada martes obtén el doble de Puntos BBVA en restaurantes aliados con tu tarjeta Aqua o Infinite.',
-    discount_value: 'x2 puntos',
-    category: 'restaurantes',
-    valid_until: '2026-03-31',
-    url: 'https://www.bbva.com.co/personas/beneficios',
-    highlight: true,
-  },
-  {
-    id: '2',
-    bank_id: 'bbva',
-    title: 'Puntos dobles en cines',
-    description: 'Cada jueves obtén el doble de Puntos BBVA en cines aliados con tu tarjeta BBVA.',
-    discount_value: 'x2 puntos',
-    category: 'entretenimiento',
-    valid_until: '2026-03-31',
-    url: 'https://www.bbva.com.co/personas/beneficios',
-  },
-  {
-    id: '3',
-    bank_id: 'itau',
-    title: 'Cashback en supermercados',
-    description: '3% de devolución en tus compras en supermercados con la Visa TDevuelve de Itaú.',
-    discount_value: '3% cashback',
-    category: 'supermercados',
-    valid_until: null,
-    url: 'https://banco.itau.co',
-    highlight: true,
-  },
-  {
-    id: '4',
-    bank_id: 'avvillas',
-    title: '10% en gasolina con CarroYa',
-    description: 'Obtén hasta $500.000/mes en cashback sobre combustible con la Tarjeta CarroYa de AV Villas.',
-    discount_value: '10% cashback',
-    category: 'combustible',
-    valid_until: null,
-    url: 'https://www.avvillas.com.co',
-    highlight: true,
-  },
-  {
-    id: '5',
-    bank_id: 'avvillas',
-    title: '5% cashback Boomerang',
-    description: 'Con la Tarjeta Boomerang obtén 5% de cashback en restaurantes, moda y entretenimiento.',
-    discount_value: '5% cashback',
-    category: 'restaurantes',
-    valid_until: null,
-    url: 'https://www.avvillas.com.co',
-  },
-  {
-    id: '6',
-    bank_id: 'colpatria',
-    title: '10% devolución en Cencosud',
-    description: 'Con la Tarjeta Cencosud obtén 10% de devolución en Jumbo, Metro, Easy y más.',
-    discount_value: '10% back',
-    category: 'supermercados',
-    valid_until: null,
-    url: 'https://www.scotiabankcolpatria.com',
-    highlight: true,
-  },
-  {
-    id: '7',
-    bank_id: 'colpatria',
-    title: '4% en PriceSmart',
-    description: 'Con la Visa PriceSmart de Colpatria obtén 4% de cashback en todas tus compras en PriceSmart.',
-    discount_value: '4% cashback',
-    category: 'supermercados',
-    valid_until: null,
-    url: 'https://www.scotiabankcolpatria.com',
-  },
-  {
-    id: '8',
-    bank_id: 'lulobank',
-    title: '30% cashback en streaming',
-    description: 'Con Lulo Pro obtén 30% de cashback en tus suscripciones de Netflix, Spotify, Disney+ y más.',
-    discount_value: '30% cashback',
-    category: 'streaming',
-    valid_until: null,
-    url: 'https://www.lulobank.com',
-    highlight: true,
-  },
-  {
-    id: '9',
-    bank_id: 'rappicard',
-    title: '5% en Rappi Travel',
-    description: 'Con RappiCard obtén 5% de cashback en vuelos, hoteles y alquileres en Rappi Travel.',
-    discount_value: '5% cashback',
-    category: 'viajes',
-    valid_until: null,
-    url: 'https://rappicard.co',
-  },
-  {
-    id: '10',
-    bank_id: 'bancolombia',
-    title: 'Millas LATAM Pass',
-    description: 'Con la Visa Avianca LifeMiles de Bancolombia acumula millas en todas tus compras para volar.',
-    discount_value: 'Millas LifeMiles',
-    category: 'viajes',
-    valid_until: null,
-    url: 'https://www.bancolombia.com',
-  },
-  {
-    id: '11',
-    bank_id: 'davivienda',
-    title: 'G-Zero sin cuota + cashback',
-    description: 'La G-Zero de Davivienda tiene 0% cuota de manejo permanente y 1% cashback en suscripciones.',
-    discount_value: '1% + $0 cuota',
-    category: 'streaming',
-    valid_until: null,
-    url: 'https://www.davivienda.com',
-  },
-  {
-    id: '12',
-    bank_id: 'colpatria',
-    title: '5% cashback suscripciones',
-    description: 'Con One Cashback Amex de Colpatria obtén 5% de devolución en pagos recurrentes y suscripciones.',
-    discount_value: '5% cashback',
-    category: 'streaming',
-    valid_until: null,
-    url: 'https://www.scotiabankcolpatria.com',
-  },
-]
-
-const CATEGORY_COLORS: Record<string, string> = {
-  restaurantes: 'bg-orange-100 text-orange-700',
-  entretenimiento: 'bg-purple-100 text-purple-700',
-  supermercados: 'bg-green-100 text-green-700',
-  combustible: 'bg-yellow-100 text-yellow-700',
-  streaming: 'bg-pink-100 text-pink-700',
-  viajes: 'bg-blue-100 text-blue-700',
-  cashback: 'bg-mint-100 text-mint-700',
-  general: 'bg-gray-100 text-gray-700',
-  puntos: 'bg-amber-100 text-amber-700',
-  moda: 'bg-rose-100 text-rose-700',
-  seguros: 'bg-slate-100 text-slate-700',
-}
+import { useState, useEffect, useMemo } from 'react'
+import { motion } from 'framer-motion'
+import { ExternalLink, Calendar, Tag } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+import { CATEGORIES } from '../types/database'
+import type { Offer, Bank, BenefitCategory } from '../types/database'
 
 export default function Offers() {
-  const { userCards } = useUserCards()
-  const [activeCategory, setActiveCategory] = useState<BenefitCategory | 'all'>('all')
-  const [activeBank, setActiveBank] = useState<string>('all')
+  const [offers, setOffers] = useState<(Offer & { bank: Bank })[]>([])
+  const [banks, setBanks] = useState<Bank[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedBank, setSelectedBank] = useState<string | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<BenefitCategory | null>(null)
 
-  // Derive the user's available banks from their cards
-  const userBankIds = useMemo(() => {
-    return [...new Set(userCards.map(uc => uc.card?.bank_id).filter(Boolean))] as string[]
-  }, [userCards])
+  useEffect(() => {
+    async function load() {
+      const [offersRes, banksRes] = await Promise.all([
+        supabase
+          .from('offers')
+          .select('*, bank:banks(*)')
+          .or('valid_until.gte.now(),valid_until.is.null')
+          .order('valid_until', { ascending: true }),
+        supabase.from('banks').select('*').order('name'),
+      ])
+      setOffers((offersRes.data as any) ?? [])
+      setBanks(banksRes.data ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [])
 
-  // Only show offers belonging to banks where the user has a card
-  const availableOffers = useMemo(() => {
-    return DEMO_OFFERS.filter(offer => userBankIds.includes(offer.bank_id))
-  }, [userBankIds])
+  const filtered = useMemo(() => {
+    return offers.filter((o) => {
+      if (selectedBank && o.bank_id !== selectedBank) return false
+      if (selectedCategory && o.category !== selectedCategory) return false
+      return true
+    })
+  }, [offers, selectedBank, selectedCategory])
 
-  const filteredOffers = availableOffers.filter(o => {
-    const catMatch = activeCategory === 'all' || o.category === activeCategory
-    const bankMatch = activeBank === 'all' || o.bank_id === activeBank
-    return catMatch && bankMatch
-  })
+  const offerBankIds = new Set(offers.map((o) => o.bank_id))
+  const relevantBanks = banks.filter((b) => offerBankIds.has(b.id))
 
-  const highlightedOffers = filteredOffers.filter(o => o.highlight)
-  const regularOffers = filteredOffers.filter(o => !o.highlight)
-
-  const banksWithOffers = [...new Set(availableOffers.map(o => o.bank_id))]
-
-  const formatDate = (d: string | null) => {
-    if (!d) return 'Vigente'
-    const date = new Date(d)
-    return `Hasta ${date.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}`
+  if (loading) {
+    return (
+      <div className="page-container space-y-4">
+        <h1 className="text-2xl font-bold text-gray-900">Ofertas</h1>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="eliseo-card h-24 animate-pulse bg-gray-100" />
+        ))}
+      </div>
+    )
   }
 
   return (
-    <div className="page-container animate-fade-in">
-      <div className="mb-5">
-        <div className="flex items-center gap-2 mb-1">
-          <Tag size={20} className="text-eliseo-500" />
-          <h1 className="text-2xl font-black text-gray-900">Ofertas</h1>
-        </div>
-        <p className="text-gray-500 text-sm">Descuentos y beneficios activos en Colombia</p>
+    <div className="page-container space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Ofertas</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Promociones y descuentos activos de los bancos.
+        </p>
       </div>
 
-      {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-4">
-        <button
-          onClick={() => setActiveCategory('all')}
-          className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeCategory === 'all' ? 'bg-eliseo-500 text-white' : 'bg-white text-gray-500 border border-gray-200'
+      {/* Bank filter */}
+      {relevantBanks.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+          <button
+            onClick={() => setSelectedBank(null)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              !selectedBank
+                ? 'bg-eliseo-500 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
-        >
-          Todas
-        </button>
-        {CATEGORIES.filter(c => DEMO_OFFERS.some(o => o.category === c.id)).map(cat => (
+          >
+            Todos
+          </button>
+          {relevantBanks.map((bank) => (
+            <button
+              key={bank.id}
+              onClick={() => setSelectedBank(selectedBank === bank.id ? null : bank.id)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                selectedBank === bank.id
+                  ? 'bg-eliseo-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {bank.short_name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Category filter */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        {CATEGORIES.filter((c) => c.id !== 'general').map((cat) => (
           <button
             key={cat.id}
-            onClick={() => setActiveCategory(cat.id === activeCategory ? 'all' : cat.id)}
-            className={`flex-shrink-0 px-3 py-2 rounded-xl text-sm font-semibold transition-all flex items-center gap-1.5 ${activeCategory === cat.id ? 'bg-eliseo-500 text-white' : 'bg-white text-gray-500 border border-gray-200'
-              }`}
+            onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+            className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              selectedCategory === cat.id
+                ? 'bg-eliseo-500 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
           >
             <span>{cat.emoji}</span>
             {cat.name}
@@ -224,150 +107,71 @@ export default function Offers() {
         ))}
       </div>
 
-      {/* Bank filter */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 mb-5">
-        <button
-          onClick={() => setActiveBank('all')}
-          className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeBank === 'all' ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'
-            }`}
-        >
-          Todos
-        </button>
-        {banksWithOffers.map(bankId => {
-          const bank = getBankById(bankId)
-          if (!bank) return null
-          return (
-            <button
-              key={bankId}
-              onClick={() => setActiveBank(activeBank === bankId ? 'all' : bankId)}
-              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${activeBank === bankId ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'
-                }`}
-            >
-              <div
-                className="w-4 h-4 rounded-md flex items-center justify-center text-white font-black text-[8px]"
-                style={{ backgroundColor: bank.logo_color }}
-              >
-                {bank.logo_text.slice(0, 1)}
-              </div>
-              {bank.short_name}
-            </button>
-          )
-        })}
-      </div>
-
-      {userBankIds.length === 0 ? (
-        <div className="eliseo-card p-8 text-center border-2 border-dashed border-eliseo-200 mt-8 mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-4">
-            <CreditCard size={28} className="text-eliseo-400" />
+      {/* Offers list */}
+      {filtered.length === 0 ? (
+        <div className="eliseo-card p-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-3">
+            <Tag size={24} className="text-eliseo-400" />
           </div>
-          <h3 className="font-bold text-gray-900 mb-2">Agrega tu primera tarjeta</h3>
-          <p className="text-gray-500 text-sm mb-6 max-w-[260px] mx-auto">
-            Necesitas agregar al menos una tarjeta para descubrir las ofertas y descuentos a los que tienes acceso.
+          <p className="text-sm text-gray-500">
+            {offers.length === 0
+              ? 'No hay ofertas disponibles por el momento.'
+              : 'No hay ofertas con estos filtros.'}
           </p>
-          <Link to="/add-card" className="eliseo-btn-primary inline-flex">
-            AgregarTarjeta
-          </Link>
         </div>
       ) : (
-        <>
-          {/* Highlighted offers */}
-          {highlightedOffers.length > 0 && (
-            <div className="mb-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Flame size={16} className="text-orange-500" />
-                <span className="text-sm font-bold text-gray-900">Destacadas</span>
-              </div>
-              <div className="space-y-3">
-                {highlightedOffers.map(offer => {
-                  const bank = getBankById(offer.bank_id)
-                  if (!bank) return null
-                  return (
-                    <div key={offer.id} className="bg-gradient-to-r from-eliseo-50 to-mint-50 rounded-2xl p-4 border border-eliseo-100">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-xs flex-shrink-0 shadow-sm"
-                          style={{ backgroundColor: bank.logo_color }}
-                        >
-                          {bank.logo_text}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-gray-900 text-sm">{offer.title}</span>
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${CATEGORY_COLORS[offer.category] || 'bg-gray-100 text-gray-600'}`}>
-                              {CATEGORIES.find(c => c.id === offer.category)?.emoji} {CATEGORIES.find(c => c.id === offer.category)?.name}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1 leading-relaxed">{offer.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs font-bold text-eliseo-600 bg-eliseo-100 px-2 py-0.5 rounded-full">
-                              {offer.discount_value}
-                            </span>
-                            <span className="text-xs text-gray-400">{formatDate(offer.valid_until)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+        <div className="space-y-3">
+          {filtered.map((offer, i) => {
+            const cat = CATEGORIES.find((c) => c.id === offer.category)
+            const daysLeft = offer.valid_until
+              ? Math.ceil((new Date(offer.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+              : null
 
-          {/* Regular offers */}
-          {regularOffers.length > 0 && (
-            <div>
-              {highlightedOffers.length > 0 && <h3 className="text-sm font-bold text-gray-900 mb-3">Todas las ofertas</h3>}
-              <div className="space-y-3">
-                {regularOffers.map(offer => {
-                  const bank = getBankById(offer.bank_id)
-                  if (!bank) return null
-                  return (
-                    <div key={offer.id} className="eliseo-card p-4">
-                      <div className="flex items-start gap-3">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-xs flex-shrink-0"
-                          style={{ backgroundColor: bank.logo_color }}
-                        >
-                          {bank.logo_text}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-gray-900 text-sm">{offer.title}</div>
-                          <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{offer.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs font-semibold text-gray-600">{offer.discount_value}</span>
-                            <span className="text-xs text-gray-400">{formatDate(offer.valid_until)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {filteredOffers.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-4xl mb-3">🔍</div>
-              <p className="text-gray-500 font-medium">Sin ofertas por ahora</p>
-              <p className="text-gray-400 text-sm mt-1 mb-4">No encontramos promociones vigentes para tus tarjetas o el filtro seleccionado.</p>
-              <button
-                onClick={() => { setActiveCategory('all'); setActiveBank('all') }}
-                className="text-eliseo-500 text-sm font-semibold mt-2"
+            return (
+              <motion.div
+                key={offer.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                className="eliseo-card p-4"
               >
-                Limpiar filtros
-              </button>
-            </div>
-          )}
-        </>
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: offer.bank.logo_color + '20' }}
+                  >
+                    <span className="font-black text-xs" style={{ color: offer.bank.logo_color }}>
+                      {offer.bank.short_name.substring(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-semibold text-sm text-gray-900">{offer.title}</p>
+                      {cat && (
+                        <span className="text-[10px] bg-eliseo-50 text-eliseo-600 font-semibold px-1.5 py-0.5 rounded-full">
+                          {cat.emoji} {cat.name}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 leading-relaxed">{offer.description}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-[11px] text-gray-400">{offer.bank.short_name}</span>
+                      {daysLeft !== null && (
+                        <span className={`text-[11px] font-medium flex items-center gap-1 ${
+                          daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-gray-400'
+                        }`}>
+                          <Calendar size={10} />
+                          {daysLeft <= 0 ? 'Vence hoy' : `${daysLeft} dia${daysLeft !== 1 ? 's' : ''}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )
+          })}
+        </div>
       )}
-
-      {/* Disclaimer */}
-      <div className="mt-6 bg-gray-50 rounded-xl p-4">
-        <p className="text-xs text-gray-400 text-center leading-relaxed">
-          Los beneficios mostrados son de carácter informativo. Verifica condiciones actualizadas directamente en el sitio web de tu banco o aplicación oficial.
-        </p>
-      </div>
     </div>
   )
 }
