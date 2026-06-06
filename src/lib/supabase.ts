@@ -1,16 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-const useMocks = import.meta.env.VITE_USE_MOCKS === 'true'
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+// Credenciales por defecto (anon/publishable key, protegida por RLS) para que
+// Vercel y GitHub Pages funcionen sin configurar variables de entorno, como antes.
+// Si se definen VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY, tienen prioridad.
+// En modo mock (VITE_USE_MOCKS) este cliente nunca se llama.
+const supabaseUrl =
+  (import.meta.env.VITE_SUPABASE_URL as string) || 'https://qcaubrbwrrigwavhfxhd.supabase.co'
+const supabaseAnonKey =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || 'sb_publishable_iYVxmzwQlnzA-9ehmNEnUw_DVWg1vzD'
 
-// En modo mock el cliente nunca se usa (los hooks y dataSource cortocircuitan),
-// así que no exigimos credenciales y evitamos romper el arranque local.
-if (!useMocks && (!supabaseUrl || !supabaseAnonKey)) {
-  throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY env variables')
-}
-
-export const supabase = createClient(
-  supabaseUrl || 'http://localhost:54321',
-  supabaseAnonKey || 'mock-anon-key'
-)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
