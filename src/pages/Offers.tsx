@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { ExternalLink, Calendar, Tag } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { fetchOffers } from '../lib/dataSource'
 import { CATEGORIES } from '../types/database'
 import type { Offer, Bank, BenefitCategory } from '../types/database'
 
@@ -13,20 +13,11 @@ export default function Offers() {
   const [selectedCategory, setSelectedCategory] = useState<BenefitCategory | null>(null)
 
   useEffect(() => {
-    async function load() {
-      const [offersRes, banksRes] = await Promise.all([
-        supabase
-          .from('offers')
-          .select('*, bank:banks(*)')
-          .or('valid_until.gte.now(),valid_until.is.null')
-          .order('valid_until', { ascending: true }),
-        supabase.from('banks').select('*').order('name'),
-      ])
-      setOffers((offersRes.data as any) ?? [])
-      setBanks(banksRes.data ?? [])
+    fetchOffers().then(({ offers, banks }) => {
+      setOffers(offers)
+      setBanks(banks)
       setLoading(false)
-    }
-    load()
+    })
   }, [])
 
   const filtered = useMemo(() => {

@@ -1,6 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { USE_MOCKS } from '../lib/dataSource'
+import { MOCK_USER } from '../mocks/fixtures'
+
+const mockUser = { id: MOCK_USER.id, email: MOCK_USER.email } as User
 
 interface AuthContextType {
   user: User | null
@@ -19,6 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (USE_MOCKS) {
+      setUser(mockUser)
+      setLoading(false)
+      return
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
@@ -35,16 +45,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string) => {
+    if (USE_MOCKS) {
+      setUser(mockUser)
+      return { error: null }
+    }
     const { error } = await supabase.auth.signUp({ email, password })
     return { error: error as Error | null }
   }
 
   const signIn = async (email: string, password: string) => {
+    if (USE_MOCKS) {
+      setUser(mockUser)
+      return { error: null }
+    }
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     return { error: error as Error | null }
   }
 
   const signOut = async () => {
+    if (USE_MOCKS) {
+      setUser(null)
+      return
+    }
     await supabase.auth.signOut()
   }
 

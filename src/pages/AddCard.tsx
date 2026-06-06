@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Search, Check, CreditCard } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { fetchBanks, fetchCardsByBank } from '../lib/dataSource'
 import { useUserCards } from '../hooks/useUserCards'
 import type { Bank, Card } from '../types/database'
 import { TIER_LABELS } from '../types/database'
@@ -25,21 +25,12 @@ export default function AddCard() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    supabase
-      .from('banks')
-      .select('*')
-      .order('name')
-      .then(({ data }) => setBanks(data ?? []))
+    fetchBanks().then(setBanks)
   }, [])
 
   useEffect(() => {
     if (!selectedBank) return
-    supabase
-      .from('cards')
-      .select('*')
-      .eq('bank_id', selectedBank.id)
-      .order('name')
-      .then(({ data }) => setCards(data ?? []))
+    fetchCardsByBank(selectedBank.id).then(setCards)
   }, [selectedBank])
 
   const filteredBanks = banks.filter((b) =>

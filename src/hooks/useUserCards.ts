@@ -1,6 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
+import { USE_MOCKS } from '../lib/dataSource'
+import {
+  getUserCards,
+  addUserCard,
+  removeUserCard,
+  setPrimaryUserCard,
+} from '../mocks/store'
 import type { UserCard, Card, Bank, Benefit } from '../types/database'
 
 export interface UserCardJoined extends UserCard {
@@ -16,6 +23,12 @@ export function useUserCards() {
   const fetchCards = useCallback(async () => {
     if (!user) {
       setCards([])
+      setLoading(false)
+      return
+    }
+
+    if (USE_MOCKS) {
+      setCards(getUserCards())
       setLoading(false)
       return
     }
@@ -69,6 +82,12 @@ export function useUserCards() {
   const addCard = async (cardId: string, nickname?: string, lastFour?: string, isPrimary?: boolean) => {
     if (!user) return { error: new Error('Not authenticated') }
 
+    if (USE_MOCKS) {
+      addUserCard(cardId, nickname, lastFour, isPrimary)
+      await fetchCards()
+      return { error: null }
+    }
+
     if (isPrimary) {
       await supabase
         .from('cards_user')
@@ -89,6 +108,12 @@ export function useUserCards() {
   }
 
   const removeCard = async (userCardId: string) => {
+    if (USE_MOCKS) {
+      removeUserCard(userCardId)
+      await fetchCards()
+      return { error: null }
+    }
+
     const { error } = await supabase
       .from('cards_user')
       .delete()
@@ -100,6 +125,12 @@ export function useUserCards() {
 
   const setPrimary = async (userCardId: string) => {
     if (!user) return
+
+    if (USE_MOCKS) {
+      setPrimaryUserCard(userCardId)
+      await fetchCards()
+      return
+    }
 
     await supabase
       .from('cards_user')
