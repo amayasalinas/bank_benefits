@@ -1,249 +1,173 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ArrowLeft, Search, Check, CreditCard } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { fetchBanks, fetchCardsByBank } from '../lib/dataSource'
 import { useUserCards } from '../hooks/useUserCards'
-import type { Bank, Card } from '../types/database'
+import type { Bank, Card, PaymentProfile } from '../types/database'
 import { TIER_LABELS } from '../types/database'
-
-type Step = 'bank' | 'card' | 'details'
+import Icon from '../components/v2/Icon'
+import ScreenHeader from '../components/v2/ScreenHeader'
+import CardVisual from '../components/v2/CardVisual'
+import Btn from '../components/v2/Btn'
+import { useToast } from '../components/v2/Toast'
 
 export default function AddCard() {
   const navigate = useNavigate()
-  const { addCard } = useUserCards()
+  const [searchParams] = useSearchParams()
+  const onboarding = searchParams.get('onboarding') === '1'
+  const { cards: walletCards, addCard } = useUserCards()
+  const { showToast } = useToast()
 
-  const [step, setStep] = useState<Step>('bank')
+  const [step, setStep] = useState(1)
   const [banks, setBanks] = useState<Bank[]>([])
-  const [cards, setCards] = useState<Card[]>([])
-  const [search, setSearch] = useState('')
-  const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null)
+  const [bankQuery, setBankQuery] = useState('')
+  const [bank, setBank] = useState<Bank | null>(null)
+  const [products, setProducts] = useState<Card[]>([])
+  const [loadingProducts, setLoadingProducts] = useState(false)
+  const [product, setProduct] = useState<Card | null>(null)
   const [nickname, setNickname] = useState('')
-  const [lastFour, setLastFour] = useState('')
-  const [isPrimary, setIsPrimary] = useState(false)
+  const [last4, setLast4] = useState('')
+  const [profile, setProfile] = useState<PaymentProfile>('totalero')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchBanks().then(setBanks)
   }, [])
 
-  useEffect(() => {
-    if (!selectedBank) return
-    fetchCardsByBank(selectedBank.id).then(setCards)
-  }, [selectedBank])
-
-  const filteredBanks = banks.filter((b) =>
-    b.name.toLowerCase().includes(search.toLowerCase()) ||
-    b.short_name.toLowerCase().includes(search.toLowerCase())
+  const filteredBanks = useMemo(
+    () => banks.filter((b) => b.name.toLowerCase().includes(bankQuery.toLowerCase())),
+    [banks, bankQuery]
   )
 
-  const handleSelectBank = (bank: Bank) => {
-    setSelectedBank(bank)
-    setSearch('')
-    setStep('card')
+  const pickBank = async (b: Bank) => {
+    setBank(b)
+    setProduct(null)
+    setStep(2)
+    setLoadingProducts(true)
+    setProducts(await fetchCardsByBank(b.id))
+    setLoadingProducts(false)
   }
 
-  const handleSelectCard = (card: Card) => {
-    setSelectedCard(card)
-    setStep('details')
+  const back = () => {
+    if (step > 1) setStep((s) => s - 1)
+    else navigate(onboarding ? '/dashboard' : '/my-cards')
   }
 
-  const handleSave = async () => {
-    if (!selectedCard) return
+  const finish = async () => {
+    if (!product || saving) return
     setSaving(true)
-    const { error } = await addCard(
-      selectedCard.id,
-      nickname || undefined,
-      lastFour || undefined,
-      isPrimary
-    )
+    const isFirst = walletCards.length === 0
+    const { error } = await addCard(product.id, nickname || undefined, last4 || undefined, isFirst, profile)
     setSaving(false)
-    if (!error) {
-      navigate('/my-cards', { replace: true })
+    if (error) {
+      showToast('No pudimos guardar la tarjeta. Intenta de nuevo.')
+      return
     }
+    showToast('Tarjeta agregada · tu billetera vale más')
+    navigate('/dashboard')
   }
 
-  const handleBack = () => {
-    if (step === 'details') {
-      setSelectedCard(null)
-      setStep('card')
-    } else if (step === 'card') {
-      setSelectedBank(null)
-      setCards([])
-      setStep('bank')
-    } else {
-      navigate(-1)
-    }
+  const previewCard = bank && {
+    issuer: bank.short_name,
+    product: product?.name ?? 'Tarjeta',
+    network: product?.franchise ?? 'Visa',
+    tier: product ? (TIER_LABELS[product.tier] ?? product.tier) : '',
+    nickname: nickname || 'Mi tarjeta',
+    last4: last4 || '0000',
+    reward: 'cashback' as const,
+    veoYear: 0,
+    accent: bank.logo_color,
   }
 
   return (
-    <div className="page-container space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleBack}
-          aria-label="Volver"
-          className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-        >
-          <ArrowLeft size={20} className="text-gray-600" />
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Agregar tarjeta</h1>
-          <p className="text-xs text-gray-500">
-            {step === 'bank' && 'Selecciona tu banco'}
-            {step === 'card' && `Tarjetas de ${selectedBank?.short_name}`}
-            {step === 'details' && 'Detalles opcionales'}
-          </p>
-        </div>
+    <div className="screen">
+      <ScreenHeader title="Agregar tarjeta" subtitle={`Paso ${step} de 3`} onBack={back} />
+
+      {/* progreso */}
+      <div style={{ display: 'flex', gap: 6, padding: '16px 20px 4px' }}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} style={{ flex: 1, height: 4, borderRadius: 999, background: i <= step ? 'var(--brand)' : 'var(--line)', transition: 'background .3s' }} />
+        ))}
       </div>
 
-      {/* Step: Bank */}
-      {step === 'bank' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-          <div className="relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar banco..."
-              aria-label="Buscar banco"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input-field pl-11"
-              autoFocus
-            />
+      <div style={{ padding: '20px 20px 40px' }}>
+        {step === 1 && (
+          <div className="fade-up">
+            <div className="eyebrow" style={{ marginBottom: 12 }}>¿De qué banco es?</div>
+            <div style={{ position: 'relative', marginBottom: 14 }}>
+              <Icon name="search" size={18} style={{ position: 'absolute', left: 14, top: 15, color: 'var(--ink-faint)' }} />
+              <input className="field" style={{ paddingLeft: 42 }} placeholder="Busca tu banco" value={bankQuery} onChange={(e) => setBankQuery(e.target.value)} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {banks.length === 0 && <div className="skel" style={{ height: 62, borderRadius: 14 }} />}
+              {filteredBanks.map((b) => (
+                <button key={b.id} className="tap" onClick={() => pickBank(b)} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderRadius: 14,
+                  border: '1px solid var(--line)', background: 'var(--surface)', cursor: 'pointer', textAlign: 'left', font: 'inherit' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 9, background: `color-mix(in oklab, ${b.logo_color} 16%, white)`, color: b.logo_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15 }}>{b.name[0]}</div>
+                  <span style={{ flex: 1, fontSize: 15, fontWeight: 500 }}>{b.name}</span>
+                  <Icon name="chevronR" size={18} style={{ color: 'var(--ink-faint)' }} />
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="space-y-2">
-            {filteredBanks.map((bank) => (
-              <button
-                key={bank.id}
-                onClick={() => handleSelectBank(bank)}
-                className="w-full eliseo-card p-4 flex items-center gap-3 hover:shadow-card-hover transition-shadow text-left"
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: bank.logo_color + '20' }}
-                >
-                  <span className="font-black text-sm" style={{ color: bank.logo_color }}>
-                    {bank.short_name.substring(0, 2).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm text-gray-900">{bank.name}</p>
-                  {bank.loyalty_program && (
-                    <p className="text-xs text-gray-500">{bank.loyalty_program}</p>
-                  )}
-                </div>
-                {bank.is_digital && (
-                  <span className="text-[10px] font-semibold text-eliseo-500 bg-eliseo-50 px-2 py-0.5 rounded-full">
-                    Digital
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </motion.div>
-      )}
+        )}
 
-      {/* Step: Card */}
-      {step === 'card' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2">
-          {cards.map((card) => (
-            <button
-              key={card.id}
-              onClick={() => handleSelectCard(card)}
-              className="w-full eliseo-card p-4 flex items-center gap-3 hover:shadow-card-hover transition-shadow text-left"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                <CreditCard size={18} className="text-gray-500" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-sm text-gray-900">{card.name}</p>
-                <p className="text-xs text-gray-500">
-                  {card.franchise} · {TIER_LABELS[card.tier]} · {card.type === 'credito' ? 'Crédito' : 'Débito'}
+        {step === 2 && bank && (
+          <div className="fade-up">
+            <div className="eyebrow" style={{ marginBottom: 12 }}>Modelo de {bank.name}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {loadingProducts && <div className="skel" style={{ height: 56, borderRadius: 14 }} />}
+              {!loadingProducts && products.length === 0 && (
+                <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.5, padding: '8px 2px' }}>
+                  Aún no tenemos el catálogo de {bank.name}. Lo estamos curando — vuelve pronto.
                 </p>
-              </div>
-              {card.no_annual_fee && (
-                <span className="text-[10px] font-semibold text-mint-500 bg-mint-50 px-2 py-0.5 rounded-full">
-                  Sin cuota
-                </span>
               )}
-            </button>
-          ))}
-        </motion.div>
-      )}
-
-      {/* Step: Details */}
-      {step === 'details' && selectedCard && selectedBank && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-          {/* Card preview */}
-          <div
-            className="rounded-2xl p-5 text-white"
-            style={{ background: selectedBank.logo_color }}
-          >
-            <p className="text-white/70 text-xs">{selectedBank.short_name}</p>
-            <p className="font-bold text-lg mt-1">{selectedCard.name}</p>
-            <p className="text-white/60 text-xs mt-3">
-              {selectedCard.franchise} · {TIER_LABELS[selectedCard.tier]}
-            </p>
+              {products.map((p) => (
+                <button key={p.id} className="tap" onClick={() => { setProduct(p); setStep(3) }} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '15px 14px', borderRadius: 14,
+                  border: `1px solid ${product?.id === p.id ? 'var(--brand)' : 'var(--line)'}`, background: 'var(--surface)', cursor: 'pointer', textAlign: 'left', font: 'inherit' }}>
+                  <div style={{ width: 30, height: 20, borderRadius: 5, background: bank.logo_color, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 500 }}>{p.name}</div>
+                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink-faint)', marginTop: 1 }}>{p.franchise} · {TIER_LABELS[p.tier] ?? p.tier}{p.no_annual_fee ? ' · Sin cuota' : ''}</div>
+                  </div>
+                  <Icon name="chevronR" size={18} style={{ color: 'var(--ink-faint)' }} />
+                </button>
+              ))}
+            </div>
           </div>
+        )}
 
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Apodo (opcional)
-              </label>
-              <input
-                type="text"
-                placeholder="Ej: Mi tarjeta principal"
-                aria-label="Apodo de la tarjeta"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value.slice(0, 40))}
-                className="input-field"
-                maxLength={40}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Últimos 4 dígitos (opcional)
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="1234"
-                aria-label="Últimos 4 dígitos"
-                value={lastFour}
-                onChange={(e) => setLastFour(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                className="input-field"
-                maxLength={4}
-              />
-            </div>
-            <label className="flex items-center gap-3 eliseo-card p-4 cursor-pointer">
-              <div
-                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                  isPrimary
-                    ? 'bg-eliseo-500 border-eliseo-500'
-                    : 'border-gray-300'
-                }`}
-              >
-                {isPrimary && <Check size={14} className="text-white" />}
+        {step === 3 && bank && previewCard && (
+          <div className="fade-up">
+            <CardVisual card={previewCard} compact style={{ marginBottom: 20 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label className="eyebrow" htmlFor="nickname">Apodo (opcional)</label>
+                <input id="nickname" className="field" style={{ marginTop: 7 }} maxLength={40} placeholder="Ej: La de los viajes" value={nickname} onChange={(e) => setNickname(e.target.value)} />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">Tarjeta principal</p>
-                <p className="text-xs text-gray-500">Se mostrará primero en tu dashboard</p>
+                <label className="eyebrow" htmlFor="last4">Últimos 4 dígitos (opcional)</label>
+                <input id="last4" className="field mono" style={{ marginTop: 7, letterSpacing: '0.2em' }} maxLength={4} inputMode="numeric" placeholder="0000" value={last4} onChange={(e) => setLast4(e.target.value.replace(/\D/g, ''))} />
               </div>
-            </label>
+              <div>
+                <span className="eyebrow">¿Cómo pagas esta tarjeta?</span>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  {([['totalero', 'Pago el total'], ['rotativo', 'Difiero / roto']] as [PaymentProfile, string][]).map(([v, l]) => (
+                    <button key={v} onClick={() => setProfile(v)} className="tap" style={{ flex: 1, padding: '13px', borderRadius: 13, border: `1.5px solid ${profile === v ? 'var(--brand)' : 'var(--line)'}`, background: profile === v ? 'var(--brand-tint)' : 'var(--surface)', color: profile === v ? 'var(--brand-deep)' : 'var(--ink-soft)', fontWeight: 600, fontSize: 14, cursor: 'pointer', font: 'inherit' }}>{l}</button>
+                  ))}
+                </div>
+                <p style={{ fontSize: 11.5, color: 'var(--ink-faint)', marginTop: 8, lineHeight: 1.45 }}>
+                  {profile === 'totalero' ? 'Optimizamos tus recompensas netas (interés = 0).' : 'Priorizamos tasa baja: recomendarte millas sería malo para ti.'}
+                </p>
+              </div>
+            </div>
+            <Btn block variant="primary" style={{ marginTop: 24 }} icon="check" disabled={saving} onClick={finish}>
+              {saving ? 'Guardando…' : 'Guardar tarjeta'}
+            </Btn>
           </div>
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="eliseo-btn-primary w-full disabled:opacity-50"
-          >
-            {saving ? 'Guardando...' : 'Guardar tarjeta'}
-          </button>
-        </motion.div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

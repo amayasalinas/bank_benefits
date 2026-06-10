@@ -17,16 +17,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-eliseo flex items-center justify-center animate-pulse-slow">
-            <span className="text-white font-black text-xl">E</span>
+      <div className="app" style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 16, background: 'var(--brand-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 22, height: 22, borderRadius: '50%', border: '3px solid var(--on-brand)', borderRightColor: 'transparent', transform: 'rotate(-45deg)' }} />
           </div>
-          <div className="flex gap-1.5">
-            <div className="w-2 h-2 bg-eliseo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-eliseo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-eliseo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-          </div>
+          <div className="skel" style={{ width: 120, height: 8, borderRadius: 999 }} />
         </div>
       </div>
     )

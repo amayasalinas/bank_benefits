@@ -8,7 +8,7 @@ import {
   removeUserCard,
   setPrimaryUserCard,
 } from '../mocks/store'
-import type { UserCard, Card, Bank, Benefit } from '../types/database'
+import type { UserCard, Card, Bank, Benefit, PaymentProfile } from '../types/database'
 
 export interface UserCardJoined extends UserCard {
   card: Card & { bank: Bank }
@@ -79,7 +79,13 @@ export function useUserCards() {
     fetchCards()
   }, [fetchCards])
 
-  const addCard = async (cardId: string, nickname?: string, lastFour?: string, isPrimary?: boolean) => {
+  const addCard = async (
+    cardId: string,
+    nickname?: string,
+    lastFour?: string,
+    isPrimary?: boolean,
+    paymentProfile?: PaymentProfile
+  ) => {
     if (!user) return { error: new Error('Not authenticated') }
 
     if (USE_MOCKS) {
@@ -95,12 +101,14 @@ export function useUserCards() {
         .eq('user_id', user.id)
     }
 
+    // payment_profile requiere la columna de supabase/migration_v2.sql.
     const { error } = await supabase.from('cards_user').insert({
       user_id: user.id,
       card_id: cardId,
       nickname: nickname || null,
       last_four: lastFour || null,
       is_primary: isPrimary ?? false,
+      ...(paymentProfile ? { payment_profile: paymentProfile } : {}),
     })
 
     if (!error) await fetchCards()
