@@ -1,5 +1,7 @@
 # Documento de Requisitos del Producto (PRD) — Eliseo v2 (Edición Integrada: Estrategia + Producto)
 
+> ⚠️ **SUPERSEDED (jun 2026):** este documento fue reemplazado por **`PRD_Eliseo_ES_v3.md`** (edición validada con investigación de mercado y benchmark internacional). Se conserva solo como histórico. Cambios clave del v3: corrección de cifras de mercado (15.5M tarjetas, recuperación), tabla VE recalibrada (LifeMiles $43–65 COP en vuelos), benchmark MaxRewards/CardPointers/Kudos, sección de riesgos críticos y referencias con fuentes.
+
 > **Estado del documento:** v2 integrada (junio 2026). Fusiona el PRD v1 (ajustado al código en `feat/ui-polish`) con el Blueprint Estratégico (`Blueprint_Estrategico_Eliseo_ES.md`, Partes I–IX). Coexiste con `PRD_Eliseo_ES.docx` (v1), que se conserva como histórico. Audiencia: equipo de producto/ingeniería + inversionistas.
 >
 > **Este `.md` es la fuente canónica.** El `.docx` se regenera desde aquí con `python create_prd_v2_es.py`.
