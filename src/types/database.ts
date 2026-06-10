@@ -176,6 +176,24 @@ export interface CardWithBank extends Card {
   bank: Bank
 }
 
+/** Fila de la tabla featured_cards (migration_v2). */
+export interface FeaturedCardRow {
+  id: string
+  card_id: string
+  reason: string
+  highlight: string
+  apply_url: string
+  rank: number
+}
+
+/** Tarjeta destacada ("Mejores del mercado") con gancho de afiliado — contrato del front. */
+export interface FeaturedCard {
+  card: CardWithBank
+  reason: string
+  highlight: string
+  applyUrl: string
+}
+
 export interface UserCardWithDetails extends UserCard {
   card: CardWithBank
   benefits: Benefit[]

@@ -249,13 +249,9 @@ export const mockOffers: Offer[] = [
   { id: 'o6', bank_id: 'davivienda', title: '10% en supermercados', description: 'Descuento en cadenas de supermercados los fines de semana.', category: 'supermercados', valid_until: '2026-06-12', url: 'https://www.davivienda.com/personas/promociones', confidence: 'confirmado' },
 ]
 
-/** Tarjeta destacada ("Mejores del mercado") con gancho de afiliado. */
-export interface FeaturedCard {
-  card: Card & { bank: Bank }
-  reason: string
-  highlight: string
-  applyUrl: string
-}
+/** Tarjeta destacada — el contrato vive en types/database.ts; se re-exporta por compatibilidad. */
+export type { FeaturedCard } from '../types/database'
+import type { FeaturedCard } from '../types/database'
 
 const cardWithBank = (cardId: string) => {
   const card = mockCards.find((c) => c.id === cardId)!
