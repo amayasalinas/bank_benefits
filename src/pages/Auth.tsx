@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import Wordmark from '../components/v2/Wordmark'
 import Icon from '../components/v2/Icon'
 import Btn from '../components/v2/Btn'
+import TrustNotes from '../components/v2/TrustNotes'
 
 type Mode = 'signup' | 'login'
 
@@ -141,8 +142,9 @@ export default function Auth() {
           </form>
 
           <div style={{ flex: 1 }} />
-          <p style={{ fontSize: 11, lineHeight: 1.5, color: 'var(--ink-faint)', textAlign: 'center', marginTop: 20 }}>
-            Al continuar aceptas el tratamiento de tus datos según la Ley 1581 (Habeas Data). Nunca pedimos tu número de tarjeta completo, CVV ni claves bancarias.
+          <TrustNotes style={{ marginTop: 20 }} />
+          <p style={{ fontSize: 10.5, lineHeight: 1.5, color: 'var(--ink-faint)', textAlign: 'center', marginTop: 12 }}>
+            Al continuar aceptas el tratamiento de tus datos según la Ley 1581.
           </p>
         </div>
       </div>

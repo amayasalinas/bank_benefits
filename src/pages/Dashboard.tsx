@@ -1,15 +1,24 @@
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useUserCards } from '../hooks/useUserCards'
 import { toWalletViews } from '../lib/walletView'
+import { getActivationFlags, getActivationSteps } from '../lib/activation'
 import { COP } from '../lib/format'
 import { CATEGORIES_V2 } from '../data/categories'
+import type { RewardGoal } from '../types/view'
 import Icon from '../components/v2/Icon'
 import GlyphTile from '../components/v2/GlyphTile'
 import Section from '../components/v2/Section'
 import ConfidenceBadge from '../components/v2/ConfidenceBadge'
-import Btn from '../components/v2/Btn'
+import ActivationChecklist from '../components/v2/ActivationChecklist'
+
+const GOAL_SUBCOPY: Record<RewardGoal, string> = {
+  millas: 'Vas por millas — esto es lo que tu billetera puede dar.',
+  cashback: 'Vas por cashback — esto es lo que tu billetera puede devolver.',
+  puntos: 'Vas por puntos — esto es lo que tu billetera puede dar.',
+  explorar: 'Lo que tus tarjetas pueden devolverte si las usas bien.',
+}
 
 const iconBtn: React.CSSProperties = {
   position: 'relative', width: 40, height: 40, borderRadius: 13,
@@ -32,6 +41,16 @@ export default function Dashboard() {
   const firstName = fullName.split(' ')[0]
   const initial = (firstName[0] || 'E').toUpperCase()
   const today = new Date().toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })
+
+  const goal = user?.user_metadata?.reward_goal as RewardGoal | undefined
+  const flags = user ? getActivationFlags(user.id) : {}
+  const steps = getActivationSteps(wallet, flags)
+  const activationDone = steps.every((s) => s.done)
+
+  // Onboarding por objetivos: usuario nuevo (sin meta y sin tarjetas) → /goals
+  if (!loading && wallet.length === 0 && !goal) {
+    return <Navigate to="/goals" replace />
+  }
 
   if (loading) {
     return (
@@ -62,18 +81,9 @@ export default function Dashboard() {
       </div>
 
       {wallet.length === 0 ? (
-        /* estado vacío: primera tarjeta */
+        /* billetera vacía: checklist de activación (patrón MaxRewards pantalla 24) */
         <div style={{ padding: '10px 20px 0' }}>
-          <div className="card pop-in" style={{ padding: '28px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <GlyphTile glyph="cards" size={56} iconSize={26} />
-            <h2 style={{ fontSize: 19, fontWeight: 700, marginTop: 16, letterSpacing: '-0.01em' }}>Tu billetera está vacía</h2>
-            <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginTop: 6, lineHeight: 1.5 }}>
-              Agrega tu primera tarjeta y descubre cuánto valor tienes sin usar. Solo banco y modelo — nunca el número completo.
-            </p>
-            <Btn block variant="primary" style={{ marginTop: 20 }} icon="plus" onClick={() => navigate('/add-card?onboarding=1')}>
-              Agregar mi primera tarjeta
-            </Btn>
-          </div>
+          <ActivationChecklist steps={steps} name={firstName || undefined} />
         </div>
       ) : (
         <>
@@ -84,7 +94,7 @@ export default function Dashboard() {
               <ConfidenceBadge level="warn">Estimado</ConfidenceBadge>
             </div>
             <div className="tnum" style={{ fontSize: 46, fontWeight: 800, letterSpacing: '-0.03em', marginTop: 8, lineHeight: 1 }}>{COP(monthly)}</div>
-            <div style={{ fontSize: 13.5, color: 'rgba(246,245,240,0.7)', marginTop: 7 }}>Lo que tus tarjetas pueden devolverte si las usas bien.</div>
+            <div style={{ fontSize: 13.5, color: 'rgba(246,245,240,0.7)', marginTop: 7 }}>{GOAL_SUBCOPY[goal ?? 'explorar'] ?? GOAL_SUBCOPY.explorar}</div>
             <div style={{ display: 'flex', gap: 20, marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(246,245,240,0.14)' }}>
               <div>
                 <div className="tnum" style={{ fontSize: 18, fontWeight: 700 }}>{COP(walletValue)}</div>
@@ -100,6 +110,13 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* checklist de activación mientras no esté completo */}
+          {!activationDone && (
+            <div style={{ padding: '18px 20px 0' }}>
+              <ActivationChecklist steps={steps} name={firstName || undefined} />
+            </div>
+          )}
 
           {/* CTA recomendador — el momento estrella */}
           <div style={{ padding: '18px 20px 0' }}>

@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth'
 import Layout from './components/layout/Layout'
 import Landing from './pages/Landing'
 import Auth from './pages/Auth'
+import Goals from './pages/Goals'
 import Dashboard from './pages/Dashboard'
 import MyCards from './pages/MyCards'
 import AddCard from './pages/AddCard'
@@ -42,6 +43,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
       <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+      <Route path="/goals" element={<ProtectedRoute><Goals /></ProtectedRoute>} />
       <Route
         element={
           <ProtectedRoute>

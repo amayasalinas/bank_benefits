@@ -65,6 +65,9 @@ export interface PromoView {
   validDays: number
 }
 
+/** Meta del usuario (onboarding por objetivos). Vive en user_metadata.reward_goal. */
+export type RewardGoal = 'millas' | 'cashback' | 'puntos' | 'explorar'
+
 export interface RankedCard {
   card: WalletCardView
   baseRate: number
