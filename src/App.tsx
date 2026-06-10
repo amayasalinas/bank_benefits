@@ -9,6 +9,7 @@ import AddCard from './pages/AddCard'
 import CardDetail from './pages/CardDetail'
 import Recommender from './pages/Recommender'
 import Offers from './pages/Offers'
+import Destacados from './pages/Destacados'
 import Profile from './pages/Profile'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -58,6 +59,7 @@ function AppRoutes() {
         <Route path="/card-detail/:cardId" element={<CardDetail />} />
         <Route path="/recommender" element={<Recommender />} />
         <Route path="/offers" element={<Offers />} />
+        <Route path="/destacados" element={<Destacados />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

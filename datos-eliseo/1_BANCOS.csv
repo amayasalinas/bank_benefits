@@ -1,0 +1,14 @@
+id;nombre;nombre_corto;programa_fidelidad;es_digital;website;color_logo;url_tarjetas
+bancolombia;Bancolombia;Bancolombia;Puntos Colombia;No;https://www.bancolombia.com/tarjetas-de-credito;#FFCC00;https://www.bancolombia.com/tarjetas-de-credito
+davivienda;Davivienda;Davivienda;DaviPuntos;No;https://www.davivienda.com/personas/tarjetas-de-credito;#E30613;https://www.davivienda.com/personas/tarjetas-de-credito
+bbva;BBVA Colombia;BBVA;Puntos BBVA;No;https://www.bbva.com.co/personas/productos/tarjetas;#004481;https://www.bbva.com.co/personas/productos/tarjetas
+bogota;Banco de Bogotá;Bco. Bogotá;tuplús;No;https://www.bancodebogota.com/tarjetas-de-credito;#E5202E;https://www.bancodebogota.com/tarjetas-de-credito
+popular;Banco Popular;Bco. Popular;tuplús;No;https://www.bancopopular.com.co/tarjeta-de-credito;#003087;https://www.bancopopular.com.co/tarjeta-de-credito
+colpatria;Scotiabank Colpatria;Colpatria;One Rewards;No;https://www.scotiabankcolpatria.com/tarjetas;#EC1C24;https://www.scotiabankcolpatria.com/tarjetas
+itau;Itaú Colombia;Itaú;Días Itaú;No;https://banco.itau.co/tarjetas-de-credito;#EC7000;https://banco.itau.co/tarjetas-de-credito
+occidente;Banco de Occidente;Bco. Occidente;tuplús;No;https://www.bancodeoccidente.com.co/tarjetas;#0053A0;https://www.bancodeoccidente.com.co/tarjetas
+avvillas;AV Villas;AV Villas;tuplús / LifeMiles;No;https://www.avvillas.com.co/tarjeta-credito-en-linea;#009E3A;https://www.avvillas.com.co/tarjeta-credito-en-linea
+nu;Nu Colombia;Nu;Nu Plus;Sí;https://nu.com.co/tarjeta-de-credito;#820AD1;https://nu.com.co/tarjeta-de-credito
+lulobank;Lulobank;Lulo;Cashback directo;Sí;https://www.lulobank.com;#00C28B;https://www.lulobank.com
+rappicard;RappiCard;RappiCard;Cashback Rappi;Sí;https://rappicard.co;#FF441F;https://rappicard.co
+nequi;Nequi;Nequi;Sin programa;Sí;https://www.nequi.com.co;#7B2FBE;https://www.nequi.com.co

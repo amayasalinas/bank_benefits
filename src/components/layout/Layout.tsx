@@ -1,55 +1,64 @@
-import { Outlet, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { FiMapPin, FiX } from 'react-icons/fi'
-import Navbar from './Navbar'
-import BottomNav from './BottomNav'
-import { useGeolocation } from '../../hooks/useGeolocation'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Home, CreditCard, Compass, Tag, User } from 'lucide-react'
+
+const navItems = [
+  { to: '/dashboard', icon: Home, label: 'Inicio' },
+  { to: '/my-cards', icon: CreditCard, label: 'Tarjetas' },
+  { to: '/recommender', icon: Compass, label: 'Recomendador' },
+  { to: '/offers', icon: Tag, label: 'Ofertas' },
+  { to: '/profile', icon: User, label: 'Perfil' },
+]
 
 export default function Layout() {
   const location = useLocation()
-  const isAddCard = location.pathname.includes('/add-card')
-  const { currentOffer, dismissOffer } = useGeolocation()
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      <Navbar />
-
-      {/* Geolocation Push Notification */}
-      <AnimatePresence>
-        {currentOffer && (
-          <motion.div
-            initial={{ opacity: 0, y: -100 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -100 }}
-            className="fixed top-20 left-4 right-4 z-50 p-4 rounded-2xl bg-white/90 backdrop-blur-xl border border-white/20 shadow-glass"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-                <FiMapPin className="text-orange-500 text-xl" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-bold text-gray-900 leading-tight mb-1">
-                  {currentOffer.title}
-                </h4>
-                <p className="text-sm text-gray-600 line-clamp-2">
-                  {currentOffer.description}
-                </p>
-              </div>
-              <button
-                onClick={dismissOffer}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400"
-              >
-                <FiX />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <main className="min-h-screen pb-20">
+    <div className="min-h-screen bg-background">
+      <motion.main
+        key={location.pathname}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         <Outlet />
-      </main>
-      {!isAddCard && <BottomNav />}
+      </motion.main>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t border-eliseo-100/50">
+        <div className="max-w-2xl mx-auto flex justify-around items-center h-16 px-2">
+          {navItems.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors duration-200 ${
+                  isActive
+                    ? 'text-eliseo-600'
+                    : 'text-gray-400 hover:text-gray-600'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className="relative">
+                    <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
+                    {isActive && (
+                      <motion.div
+                        layoutId="nav-indicator"
+                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-eliseo-500 rounded-full"
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    )}
+                  </div>
+                  <span className={`text-[10px] font-medium ${isActive ? 'font-semibold' : ''}`}>
+                    {label}
+                  </span>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
     </div>
   )
 }

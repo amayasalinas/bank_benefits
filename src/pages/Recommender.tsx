@@ -1,146 +1,196 @@
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ChevronRight, Sparkles } from 'lucide-react'
-import { CATEGORIES, type BenefitCategory, type CategoryInfo } from '../types'
-import { getBestCardsForCategory, getBankById } from '../data/banks'
-import CreditCardVisual from '../components/CreditCardVisual'
+import { motion, AnimatePresence } from 'framer-motion'
+import { CreditCard, Plus, Trophy } from 'lucide-react'
+import { useUserCards } from '../hooks/useUserCards'
+import { CATEGORIES, TIER_LABELS, type BenefitCategory } from '../types/database'
+
+const VALUE_TYPE_WEIGHT: Record<string, number> = {
+  cashback_percent: 100,
+  discount_percent: 80,
+  points_multiplier: 60,
+  lounge_access: 50,
+  fixed_benefit: 10,
+}
 
 export default function Recommender() {
-  const [params] = useSearchParams()
-  const [selected, setSelected] = useState<BenefitCategory | null>(
-    (params.get('category') as BenefitCategory) || null
-  )
+  const [searchParams] = useSearchParams()
+  const initialCategory = searchParams.get('category') as BenefitCategory | null
+  const [selected, setSelected] = useState<BenefitCategory | null>(initialCategory)
+  const { cards, loading } = useUserCards()
 
-  const results = selected ? getBestCardsForCategory(selected) : []
+  const recommendations = useMemo(() => {
+    if (!selected || cards.length === 0) return []
 
-  const VALUE_LABEL = (type: string, value: number | null): string => {
-    switch (type) {
-      case 'cashback_percent': return `${value}% cashback`
-      case 'points_multiplier': return `x${value} pts`
-      case 'lounge_access': return value ? `${value} visitas VIP/año` : 'VIP ilimitado'
-      case 'discount_percent': return `${value}% descuento`
-      case 'fixed_benefit': return 'Beneficio incluido'
-      default: return 'Beneficio'
-    }
-  }
+    return cards
+      .map((uc) => {
+        const matching = uc.benefits.filter((b) => b.category === selected)
+        const bestScore = matching.reduce((max, b) => {
+          const weight = VALUE_TYPE_WEIGHT[b.value_type] ?? 0
+          const numVal = b.numeric_value ?? 1
+          return Math.max(max, weight * numVal)
+        }, 0)
+        return { userCard: uc, matching, score: bestScore }
+      })
+      .filter((r) => r.matching.length > 0)
+      .sort((a, b) => b.score - a.score)
+  }, [selected, cards])
 
-  const BADGE_COLOR = (type: string) => {
-    switch (type) {
-      case 'cashback_percent': return 'bg-mint-500'
-      case 'points_multiplier': return 'bg-amber-500'
-      case 'lounge_access': return 'bg-blue-500'
-      case 'discount_percent': return 'bg-purple-500'
-      default: return 'bg-eliseo-500'
-    }
+  const selectableCategories = CATEGORIES.filter((c) => c.id !== 'general')
+
+  if (loading) {
+    return (
+      <div className="page-container space-y-4">
+        <h1 className="text-2xl font-bold text-gray-900">Recomendador</h1>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="eliseo-card h-16 animate-pulse bg-gray-100" />
+        ))}
+      </div>
+    )
   }
 
   return (
-    <div className="page-container animate-fade-in">
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Sparkles size={20} className="text-eliseo-500" />
-          <h1 className="text-2xl font-black text-gray-900">Recomendador</h1>
-        </div>
-        <p className="text-gray-500 text-sm">
-          Selecciona dónde vas a gastar y te decimos qué tarjeta usar
+    <div className="page-container space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Recomendador</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Selecciona una categoría y te decimos cuál tarjeta usar.
         </p>
       </div>
 
-      {/* Category Grid */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {CATEGORIES.filter(c => c.id !== 'general').map(cat => (
+      {/* Categories */}
+      <div className="flex flex-wrap gap-2">
+        {selectableCategories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setSelected(selected === cat.id ? null : cat.id)}
-            className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-200 active:scale-95 ${
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
               selected === cat.id
-                ? 'border-eliseo-400 bg-eliseo-50 shadow-md'
-                : 'border-transparent bg-white shadow-sm hover:border-eliseo-200'
+                ? 'bg-eliseo-500 text-white shadow-sm'
+                : 'bg-white border border-gray-200 text-gray-700 hover:border-eliseo-300'
             }`}
           >
-            <span className="text-2xl">{cat.emoji}</span>
-            <span className={`text-xs font-semibold text-center leading-tight ${selected === cat.id ? 'text-eliseo-700' : 'text-gray-600'}`}>
-              {cat.name}
-            </span>
+            <span>{cat.emoji}</span>
+            {cat.name}
           </button>
         ))}
       </div>
 
       {/* Results */}
-      {selected && (
-        <div className="animate-slide-up">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="section-title mb-0">
-              Mejores tarjetas para {CATEGORIES.find(c => c.id === selected)?.name}
-            </h2>
-            <span className="bg-eliseo-50 text-eliseo-600 text-xs font-bold px-2 py-0.5 rounded-full">
-              {results.length}
-            </span>
-          </div>
-
-          {results.length === 0 ? (
-            <div className="eliseo-card p-8 text-center">
-              <p className="text-gray-500 text-sm">No hay tarjetas con beneficios específicos en esta categoría.</p>
-              <p className="text-gray-400 text-xs mt-1">Prueba con otra categoría.</p>
+      <AnimatePresence mode="wait">
+        {!selected ? (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="eliseo-card p-8 text-center"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-3">
+              <Trophy size={24} className="text-eliseo-400" />
             </div>
-          ) : (
-            <div className="space-y-3">
-              {results.map((item, idx) => {
-                const bank = getBankById(item.bank_id)
-                if (!bank) return null
-                return (
+            <p className="text-sm text-gray-500">
+              Elige una categoría para ver cuál de tus tarjetas te da el mejor beneficio.
+            </p>
+          </motion.div>
+        ) : cards.length === 0 ? (
+          <motion.div
+            key="no-cards"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="eliseo-card p-8 text-center"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-3">
+              <CreditCard size={24} className="text-eliseo-400" />
+            </div>
+            <h3 className="font-bold text-gray-900 mb-1">Agrega tu primera tarjeta</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Para obtener recomendaciones personalizadas.
+            </p>
+            <Link to="/add-card" className="eliseo-btn-primary inline-flex items-center gap-2">
+              <Plus size={18} />
+              Agregar tarjeta
+            </Link>
+          </motion.div>
+        ) : recommendations.length === 0 ? (
+          <motion.div
+            key="no-results"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="eliseo-card p-6 text-center"
+          >
+            <p className="text-sm text-gray-500">
+              Ninguna de tus tarjetas tiene beneficios específicos para esta categoría.
+              Usa tu tarjeta principal para esta compra.
+            </p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="results"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="space-y-3"
+          >
+            {recommendations.map((rec, i) => {
+              const { userCard: uc, matching } = rec
+              const isTop = i === 0
+
+              return (
+                <motion.div
+                  key={uc.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
                   <Link
-                    key={item.id}
-                    to={`/card-detail/${item.id}`}
-                    className="block animate-slide-up"
-                    style={{ animationDelay: `${idx * 50}ms` }}
+                    to={`/card-detail/${uc.id}`}
+                    className={`block eliseo-card p-4 transition-shadow ${
+                      isTop ? 'ring-2 ring-eliseo-400 shadow-card-hover' : 'hover:shadow-card-hover'
+                    }`}
                   >
-                    <div className="eliseo-card p-4 hover:shadow-card-hover transition-all duration-200 active:scale-[0.99]">
-                      <div className="flex items-center gap-3">
-                        {/* Rank */}
-                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-white font-black text-xs flex-shrink-0 ${
-                          idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-gray-400' : idx === 2 ? 'bg-orange-400' : 'bg-eliseo-200'
-                        }`}>
-                          {idx + 1}
-                        </div>
-
-                        {/* Mini card */}
-                        <CreditCardVisual card={item} bank={bank} size="sm" />
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-gray-900 text-sm truncate">{item.name}</div>
-                          <div className="text-xs text-gray-400 truncate">{bank.name}</div>
-                          <div className="mt-1.5">
-                            <span className={`text-xs font-bold text-white px-2 py-0.5 rounded-full ${BADGE_COLOR(item.topBenefit.value_type)}`}>
-                              {VALUE_LABEL(item.topBenefit.value_type, item.topBenefit.value)}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1 truncate">{item.topBenefit.title}</div>
-                        </div>
-
-                        <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+                    {isTop && (
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <Trophy size={14} className="text-eliseo-500" />
+                        <span className="text-xs font-bold text-eliseo-500">MEJOR OPCIÓN</span>
                       </div>
+                    )}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: uc.card.bank.logo_color + '20' }}
+                      >
+                        <span className="font-black text-sm" style={{ color: uc.card.bank.logo_color }}>
+                          {uc.card.bank.short_name.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-gray-900">
+                          {uc.nickname ?? uc.card.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {uc.card.bank.short_name} · {TIER_LABELS[uc.card.tier]}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold text-gray-400">#{i + 1}</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {matching.map((b) => (
+                        <div key={b.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                          <p className="text-xs text-gray-700">{b.title}</p>
+                          <span className="text-xs font-bold text-eliseo-500">{b.value_label}</span>
+                        </div>
+                      ))}
                     </div>
                   </Link>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {!selected && (
-        <div className="text-center py-8">
-          <div className="w-20 h-20 rounded-3xl bg-eliseo-50 flex items-center justify-center mx-auto mb-4">
-            <Sparkles size={32} className="text-eliseo-400" />
-          </div>
-          <h3 className="font-bold text-gray-900 mb-2">¿Dónde vas a gastar?</h3>
-          <p className="text-gray-400 text-sm max-w-xs mx-auto">
-            Selecciona una categoría y te mostramos las mejores tarjetas para maximizar tus beneficios
-          </p>
-        </div>
-      )}
+                </motion.div>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

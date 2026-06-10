@@ -1,0 +1,23 @@
+{
+  "product_name": "Eliseo",
+  "version": "0.2.0",
+  "created_at": "2026-03-28T20:14:22.055Z",
+  "preferences": {
+    "default_prd_format": "lean",
+    "auto_advance": false,
+    "persona_count": 3
+  },
+  "lifecycle_stages": [
+    "discovering",
+    "validating",
+    "defining",
+    "designing",
+    "requiring",
+    "planning",
+    "building",
+    "testing",
+    "launching",
+    "measuring",
+    "learning"
+  ]
+}

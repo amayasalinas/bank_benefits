@@ -1,0 +1,47 @@
+HOJA: CATEGORIAS DE BENEFICIO
+id_categoria;nombre;emoji;descripcion;ejemplos
+general;General;Beneficio sin categoría específica;Sin cuota de manejo, tarjeta virtual, features generales
+cashback;Cashback;💰;Devolución en efectivo sobre el valor de la compra;RappiCard 1%, Lulo 0.5%, G-Zero 1%
+puntos;Puntos / Millas;🏆;Acumulación de puntos o millas canjeables;Puntos Colombia, DaviPuntos, tuplús, One Rewards
+viajes;Viajes;✈️;Beneficios para viajeros;Priority Pass, salas VIP, seguros, concierge
+restaurantes;Restaurantes;🍽️;Descuentos o puntos especiales en gastronomía;BBVA x2 martes, Itaú 10% Le Grand
+entretenimiento;Entretenimiento;🎬;Cines, conciertos, eventos;BBVA x2 jueves, 2x1 cines Amex
+supermercados;Supermercados;🛒;Descuentos en compras de mercado;Itaú TDevuelve 3%, PriceSmart 4%
+combustible;Combustible;⛽;Devoluciones en gasolineras;CarroYa 10%, TDevuelve 1%
+streaming;Streaming;📺;Beneficios en plataformas digitales;Lulo Pro 30%, G-Zero 1%, One Cashback 5%
+moda;Moda;👗;Descuentos en tiendas de ropa;Boomerang AV Villas 5%
+seguros;Seguros;🛡️;Coberturas de viaje, compra, médica;Visa Infinite USD 1M, Amex Platinum
+
+;;
+
+HOJA: TIPOS DE VALOR
+tipo_valor;descripcion;ejemplo_etiqueta;ejemplo
+cashback_percent;Porcentaje de devolución sobre el valor de la compra;X% cashback;1% cashback → $10.000 en $1.000.000 de compras
+points_multiplier;Multiplicador sobre la tasa base de puntos del banco;xN puntos;x2 → doble de puntos en esa categoría
+lounge_access;Acceso a salas VIP en aeropuertos (número de visitas o ilimitado);N visitas/año o ilimitado;12 visitas/año o Acceso ilimitado
+discount_percent;Porcentaje de descuento directo sobre el precio;N% descuento;10% descuento → $100.000 en $1.000.000
+fixed_benefit;Beneficio fijo incluido sin valor numérico medible;Incluido;Priority Pass, concierge, tarjeta virtual
+
+;;
+
+HOJA: NIVELES DE TARJETA
+nivel;nombre_en_app;descripcion;jerarquia
+classic;Clásica;Nivel de entrada. Beneficios básicos de la franquicia;1
+standard;Estándar;Similar a Classic. Usado por fintechs digitales;2
+gold;Gold;Nivel intermedio. Más beneficios de viaje y puntos;3
+platinum;Platinum;Nivel avanzado. Salas VIP y seguros de viaje;4
+signature;Signature;Nivel premium Visa. Superiores a Platinum;5
+black;Black;Nivel premium Mastercard/World Elite. Equivalente a Infinite;5
+infinite;Infinite;Nivel máximo Visa. Beneficios de lujo;6
+digital;Digital;Tarjetas 100% digitales de fintechs (Nu, Lulo, Rappi, Nequi);-
+cashback;Cashback;Tarjetas especializadas en devolución de dinero;-
+premium;Premium;Nivel especial co-branded o premium de fintech;-
+
+;;
+
+HOJA: FRANQUICIAS — URLS OFICIALES COLOMBIA
+franquicia;url_beneficios_colombia;url_salas_vip;url_seguros;notas
+Visa;https://www.visa.com.co/content/visa/lac/co/es/pagar-con-visa/beneficios.html;https://www.visaairportcompanion.com;https://www.visa.com.co;Los beneficios varían por nivel: Classic / Gold / Platinum / Signature / Infinite
+Mastercard;https://www.mastercard.com.co/es-co/consumidores/beneficios.html;https://www.loungekey.com;https://www.mastercard.com.co;Niveles: Standard / Gold / Platinum / World / World Elite (= Black)
+Amex;https://www.americanexpress.com/es-co/network/;https://www.prioritypass.com;https://www.americanexpress.com/es-co/network/;En Colombia emitidas por Bancolombia y Scotiabank Colpatria
+Diners;https://www.dinersclub.com/en-us/cardmember-benefits;;https://www.dinersclub.com;En Colombia emitidas por Davivienda
