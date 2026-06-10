@@ -35,7 +35,16 @@ export default function Auth() {
         }
         const { error } = await signUp(email, password, name || undefined)
         if (error) {
-          setError('No se pudo crear la cuenta. Intenta con otro correo.')
+          const msg = (error.message ?? '').toLowerCase()
+          if (msg.includes('rate limit')) {
+            setError('Estamos recibiendo muchos registros en este momento. Espera unos minutos e intenta de nuevo.')
+          } else if (msg.includes('already registered') || msg.includes('already been registered')) {
+            setError('Este correo ya tiene una cuenta. Usa "Ingresar".')
+          } else if (msg.includes('invalid')) {
+            setError('Ese correo no parece válido. Revísalo e intenta de nuevo.')
+          } else {
+            setError('No se pudo crear la cuenta. Intenta de nuevo en unos minutos.')
+          }
         } else {
           // Si Supabase exige confirmación de correo no habrá sesión y se muestra
           // esta pantalla; si la sesión se crea de una, PublicRoute redirige sola.
