@@ -61,6 +61,8 @@ export interface Card {
   fee_note: string | null
   bank_url: string
   franchise_benefits_url: string | null
+  /** Cuota de manejo mensual en COP. Columna aditiva (migration_v2); opcional hasta aplicarla. */
+  fee_month?: number | null
 }
 
 export interface Benefit {
@@ -96,6 +98,9 @@ export interface FranchiseBenefit {
   source_url: string | null
 }
 
+/** Perfil de pago de la tarjeta (PRD §8.2): gobierna la bifurcación del recomendador. */
+export type PaymentProfile = 'totalero' | 'rotativo'
+
 export interface UserCard {
   id: string
   user_id: string
@@ -104,6 +109,8 @@ export interface UserCard {
   last_four: string | null
   is_primary: boolean
   created_at: string
+  /** Columna aditiva (migration_v2); opcional hasta aplicarla. Default efectivo: 'totalero'. */
+  payment_profile?: PaymentProfile
 }
 
 export interface Offer {

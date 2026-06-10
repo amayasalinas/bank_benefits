@@ -228,7 +228,7 @@ export const mockBenefits: Benefit[] = [
   benefit('m7', 'dav-visa-signature', 'davivienda', 'Visa Signature', 'cashback', 'Cashback compras', 'Devolución sobre compras en comercios aliados', 'cashback_percent', '3% cashback', 3, 'Comercios aliados'),
   benefit('m8', 'dav-visa-signature', 'davivienda', 'Visa Signature', 'supermercados', 'Descuento mercados', 'Descuento en cadenas de supermercados', 'discount_percent', '8% dcto', 8, 'Martes y jueves'),
   // Nu
-  benefit('m9', 'nu-mc', 'nu', 'Tarjeta Nu', 'cashback', 'Cashback Nu', 'Devolución diaria que genera rendimientos', 'cashback_percent', 'Hasta 5%', 5, 'Comercios seleccionados', 'probable'),
+  benefit('m9', 'nu-mc', 'nu', 'Tarjeta Nu', 'cashback', 'Cashback Nu', 'Devolución directa al saldo en todas tus compras', 'cashback_percent', '1% cashback', 1, 'Todas las compras'),
   benefit('m10', 'nu-mc', 'nu', 'Tarjeta Nu', 'streaming', 'Suscripciones', 'Sin cuota de manejo en tus pagos de streaming', 'fixed_benefit', 'Sin cuota', null, null),
   benefit('m11', 'nu-mc', 'nu', 'Tarjeta Nu', 'general', 'Cero cuota de manejo', 'Tarjeta sin costo de manejo mensual', 'fixed_benefit', '$0 cuota', null, null),
   // BBVA Visa Infinite (catálogo)
