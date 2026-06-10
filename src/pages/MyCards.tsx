@@ -1,100 +1,60 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Plus, Star, ChevronRight, CreditCard } from 'lucide-react'
+import { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useUserCards } from '../hooks/useUserCards'
-import { TIER_LABELS } from '../types/database'
+import { toWalletViews } from '../lib/walletView'
+import { COP } from '../lib/format'
+import Icon from '../components/v2/Icon'
+import ScreenHeader from '../components/v2/ScreenHeader'
+import CardVisual from '../components/v2/CardVisual'
 
 export default function MyCards() {
+  const navigate = useNavigate()
   const { cards, loading } = useUserCards()
+  const wallet = useMemo(() => toWalletViews(cards), [cards])
+  const walletValue = wallet.reduce((s, c) => s + c.veoYear, 0)
 
-  if (loading) {
-    return (
-      <div className="page-container space-y-3">
-        <h1 className="text-2xl font-bold text-gray-900">Mis tarjetas</h1>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="eliseo-card h-20 animate-pulse bg-gray-100" />
-        ))}
-      </div>
-    )
-  }
+  // Recomendación de portafolio: tarjeta cuya cuota conocida supera su aporte anual
+  const reviewCard = wallet.find((c) => c.feeMonth != null && c.feeMonth > 0 && c.hasData && c.veoYear < c.feeMonth * 12)
 
   return (
-    <div className="page-container space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Mis tarjetas</h1>
-        <Link
-          to="/add-card"
-          aria-label="Agregar tarjeta"
-          className="w-10 h-10 rounded-xl bg-eliseo-500 flex items-center justify-center text-white shadow-sm active:scale-95 transition-transform"
-        >
-          <Plus size={20} />
-        </Link>
-      </div>
+    <div className="screen">
+      <ScreenHeader title="Mis tarjetas" subtitle={`${wallet.length} en tu billetera · ${COP(walletValue)}/año est.`} large
+        right={
+          <button className="tap" onClick={() => navigate('/add-card')} aria-label="Agregar tarjeta" style={{ width: 40, height: 40, borderRadius: 13, border: 'none', background: 'var(--brand-deep)', color: 'var(--on-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <Icon name="plus" size={22} />
+          </button>
+        } />
 
-      {cards.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="eliseo-card p-8 text-center"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-4">
-            <CreditCard size={28} className="text-eliseo-400" />
+      {reviewCard && (
+        <div style={{ padding: '18px 20px 6px' }}>
+          <div style={{ display: 'flex', gap: 12, padding: '14px', borderRadius: 16, background: 'var(--info-tint)', border: '1px solid color-mix(in oklab, var(--info) 22%, white)' }}>
+            <Icon name="scale" size={22} style={{ color: 'var(--info)', flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: 'oklch(0.40 0.09 245)' }}>Revisa tu {reviewCard.product}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 2, lineHeight: 1.4 }}>
+                Aporta ~{COP(reviewCard.veoYear)}/año pero su cuota suma {COP((reviewCard.feeMonth ?? 0) * 12)}. Úsala solo donde rinde o considera cancelarla (ojo: cancelar afecta tu historial).
+              </div>
+            </div>
           </div>
-          <h3 className="font-bold text-gray-900 mb-1">Sin tarjetas aún</h3>
-          <p className="text-sm text-gray-500 mb-5">
-            Agrega tus tarjetas para ver sus beneficios y recibir recomendaciones.
-          </p>
-          <Link to="/add-card" className="eliseo-btn-primary inline-flex items-center gap-2">
-            <Plus size={18} />
-            Agregar tarjeta
-          </Link>
-        </motion.div>
-      ) : (
-        <div className="space-y-3">
-          {cards.map((uc, i) => (
-            <motion.div
-              key={uc.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-            >
-              <Link
-                to={`/card-detail/${uc.id}`}
-                className="eliseo-card p-4 flex items-center gap-3 hover:shadow-card-hover transition-shadow"
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: uc.card.bank.logo_color + '20' }}
-                >
-                  <span
-                    className="text-lg font-black"
-                    style={{ color: uc.card.bank.logo_color }}
-                  >
-                    {uc.card.bank.short_name.charAt(0)}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm text-gray-900 truncate">
-                      {uc.nickname ?? uc.card.name}
-                    </p>
-                    {uc.is_primary && (
-                      <Star size={12} className="text-eliseo-500 flex-shrink-0" fill="currentColor" />
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    {uc.card.bank.short_name} · {uc.card.franchise} {TIER_LABELS[uc.card.tier]}
-                  </p>
-                  <p className="text-[11px] text-eliseo-500 font-medium mt-0.5">
-                    {uc.benefits.length} beneficio{uc.benefits.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <ChevronRight size={18} className="text-gray-300 flex-shrink-0" />
-              </Link>
-            </motion.div>
-          ))}
         </div>
       )}
+
+      <div style={{ padding: '14px 20px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {loading && <div className="skel" style={{ height: 212, borderRadius: 20 }} />}
+
+        {!loading && wallet.map((c, i) => (
+          <div key={c.userCardId} className="fade-up" style={{ animationDelay: `${i * 0.05}s` }}>
+            <CardVisual card={c} onClick={() => navigate(`/card-detail/${c.userCardId}`)} />
+          </div>
+        ))}
+
+        {!loading && (
+          <button className="tap" onClick={() => navigate('/add-card')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '20px', borderRadius: 18, border: '1.5px dashed var(--line)', background: 'transparent', color: 'var(--ink-soft)', cursor: 'pointer', font: 'inherit', fontWeight: 600, fontSize: 15 }}>
+            <Icon name="plus" size={20} /> {wallet.length === 0 ? 'Agregar mi primera tarjeta' : 'Agregar otra tarjeta'}
+          </button>
+        )}
+      </div>
+      <div style={{ height: 24 }} />
     </div>
   )
 }

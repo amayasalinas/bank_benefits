@@ -1,88 +1,70 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { CreditCard, Compass, Tag, ArrowRight, Sparkles } from 'lucide-react'
-
-const features = [
-  {
-    icon: CreditCard,
-    title: 'Tu billetera inteligente',
-    description: 'Agrega tus tarjetas y descubre todos los beneficios que ya tienes.',
-  },
-  {
-    icon: Compass,
-    title: 'Recomendador en tiempo real',
-    description: 'Selecciona una categoría y te decimos cuál tarjeta usar para maximizar tu compra.',
-  },
-  {
-    icon: Tag,
-    title: 'Ofertas actualizadas',
-    description: 'Encuentra descuentos y promociones activas de todos los bancos en un solo lugar.',
-  },
-]
+import { useNavigate } from 'react-router-dom'
+import Wordmark from '../components/v2/Wordmark'
+import GlyphTile from '../components/v2/GlyphTile'
+import ConfidenceBadge from '../components/v2/ConfidenceBadge'
+import Btn from '../components/v2/Btn'
 
 export default function Landing() {
+  const navigate = useNavigate()
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero */}
-      <section className="relative overflow-hidden px-4 pt-16 pb-12">
-        <div className="absolute inset-0 bg-gradient-eliseo opacity-5" />
-        <div className="relative max-w-2xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="inline-flex items-center gap-2 bg-eliseo-50 text-eliseo-600 text-sm font-semibold px-4 py-1.5 rounded-full mb-6">
-              <Sparkles size={16} />
-              Maximiza tus tarjetas
-            </div>
-            <h1 className="text-4xl font-black text-gray-900 leading-tight mb-4">
-              Saca el máximo provecho de{' '}
-              <span className="bg-gradient-eliseo gradient-text">tus tarjetas</span>
+    <div className="app">
+      <div className="screen" style={{ background: 'linear-gradient(170deg, var(--hero-a) 0%, var(--hero-b) 92%)', color: '#f6f5f0' }}>
+        <div style={{ padding: 'calc(34px + env(safe-area-inset-top, 0px)) 24px 26px', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Wordmark size={22} color="#f6f5f0" />
+            <span className="mono" style={{ fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(246,245,240,0.55)' }}>Colombia</span>
+          </div>
+
+          <div style={{ marginTop: 46 }}>
+            <div className="eyebrow fade-up" style={{ color: 'var(--gold)', marginBottom: 18 }}>La Suiza de las tarjetas</div>
+            <h1 className="fade-up" style={{ fontSize: 38, fontWeight: 800, lineHeight: 1.04, letterSpacing: '-0.03em', animationDelay: '.05s' }}>
+              Sabes qué tarjetas<br />tienes. Eliseo sabe<br /><span style={{ color: 'var(--hero-accent)' }}>cuál usar.</span>
             </h1>
-            <p className="text-gray-500 text-lg mb-8 max-w-md mx-auto">
-              Eliseo te dice cuál tarjeta usar en cada compra para que nunca pierdas un beneficio.
+            <p className="fade-up" style={{ marginTop: 18, fontSize: 16, lineHeight: 1.5, color: 'rgba(246,245,240,0.75)', maxWidth: 320, animationDelay: '.12s' }}>
+              En cada compra te decimos qué tarjeta de las tuyas te da el mejor beneficio — y cuánto ganas, en pesos.
             </p>
-            <Link
-              to="/auth"
-              className="eliseo-btn-primary inline-flex items-center gap-2 text-lg px-8 py-4"
-            >
+          </div>
+
+          {/* Héroe: ejemplo de recomendación */}
+          <div className="pop-in" style={{ marginTop: 30, animationDelay: '.2s' }}>
+            <div style={{ background: 'rgba(246,245,240,0.06)', border: '1px solid rgba(246,245,240,0.12)', borderRadius: 20, padding: 16, backdropFilter: 'blur(8px)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 13 }}>
+                <GlyphTile glyph="utensils" size={38} accent="var(--hero-accent)" />
+                <div style={{ flex: 1 }}>
+                  <div className="mono" style={{ fontSize: 10, color: 'rgba(246,245,240,0.5)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Voy a pagar en</div>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>Crepes &amp; Waffles</div>
+                </div>
+                <ConfidenceBadge level="ok" />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 13, color: 'rgba(246,245,240,0.7)' }}>Usa tu <strong style={{ color: '#fff' }}>LifeMiles</strong></div>
+                  <div className="mono" style={{ fontSize: 11, color: 'rgba(246,245,240,0.5)', marginTop: 2 }}>4x millas vs 1% cashback</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="mono" style={{ fontSize: 10, color: 'var(--hero-accent)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ganas</div>
+                  <div className="tnum" style={{ fontSize: 24, fontWeight: 800, color: 'var(--hero-accent)', letterSpacing: '-0.02em' }}>+$4.675</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          <div style={{ marginTop: 28 }}>
+            <Btn block variant="primary" onClick={() => navigate('/auth?mode=signup')}
+                 style={{ background: '#f6f5f0', color: '#16140f', fontSize: 17, padding: '17px' }} iconR="arrowR">
               Comenzar gratis
-              <ArrowRight size={20} />
-            </Link>
-          </motion.div>
+            </Btn>
+            <button className="tap" onClick={() => navigate('/auth?mode=login')} style={{ width: '100%', marginTop: 12, background: 'none', border: 'none', color: 'rgba(246,245,240,0.75)', fontSize: 14, fontWeight: 500, cursor: 'pointer', padding: 8 }}>
+              Ya tengo cuenta
+            </button>
+            <p style={{ marginTop: 14, fontSize: 11.5, lineHeight: 1.5, textAlign: 'center', color: 'rgba(246,245,240,0.45)' }}>
+              Sin datos sensibles. Nunca pedimos tu número completo, CVV ni clave.
+            </p>
+          </div>
         </div>
-      </section>
-
-      {/* Features */}
-      <section className="px-4 pb-16">
-        <div className="max-w-2xl mx-auto space-y-4">
-          {features.map((feature, i) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.2 + i * 0.1 }}
-              className="eliseo-card p-5 flex gap-4 items-start"
-            >
-              <div className="w-11 h-11 rounded-xl bg-eliseo-50 flex items-center justify-center flex-shrink-0">
-                <feature.icon size={22} className="text-eliseo-500" />
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 mb-1">{feature.title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{feature.description}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="px-4 pb-8 text-center">
-        <p className="text-xs text-gray-400">
-          Eliseo no almacena números de tarjeta ni datos sensibles.
-        </p>
-      </footer>
+      </div>
     </div>
   )
 }

@@ -1,189 +1,107 @@
-import { useState, useEffect, useMemo } from 'react'
-import { motion } from 'framer-motion'
-import { ExternalLink, Calendar, Tag } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { fetchOffers } from '../lib/dataSource'
-import { CATEGORIES } from '../types/database'
-import ConfidenceBadge from '../components/ConfidenceBadge'
-import type { Offer, Bank, BenefitCategory } from '../types/database'
+import type { Bank, Offer } from '../types/database'
+import { toConfLevel } from '../lib/walletView'
+import { CAT_V2 } from '../data/categories'
+import Icon from '../components/v2/Icon'
+import ScreenHeader from '../components/v2/ScreenHeader'
+import ConfidenceBadge from '../components/v2/ConfidenceBadge'
+import ChipRow from '../components/v2/ChipRow'
+
+type OfferWithBank = Offer & { bank: Bank }
+
+function daysLeft(validUntil: string | null): number | null {
+  if (!validUntil) return null
+  const diff = new Date(validUntil + 'T23:59:59').getTime() - Date.now()
+  return Math.max(0, Math.ceil(diff / 86_400_000))
+}
+
+function expiryLabel(o: Offer): { text: string; urgent: boolean } {
+  const d = daysLeft(o.valid_until)
+  if (d == null) return { text: 'Permanente', urgent: false }
+  if (d <= 7) return { text: `Vence en ${d} día${d === 1 ? '' : 's'}`, urgent: d <= 3 }
+  const date = new Date(o.valid_until + 'T12:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })
+  return { text: `Hasta ${date}`, urgent: false }
+}
 
 export default function Offers() {
-  const [offers, setOffers] = useState<(Offer & { bank: Bank })[]>([])
-  const [banks, setBanks] = useState<Bank[]>([])
+  const navigate = useNavigate()
+  const [offers, setOffers] = useState<OfferWithBank[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedBank, setSelectedBank] = useState<string | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<BenefitCategory | null>(null)
+  const [bank, setBank] = useState('all')
+  const [cat, setCat] = useState('all')
 
   useEffect(() => {
-    fetchOffers().then(({ offers, banks }) => {
+    fetchOffers().then(({ offers }) => {
       setOffers(offers)
-      setBanks(banks)
       setLoading(false)
     })
   }, [])
 
-  const filtered = useMemo(() => {
-    return offers.filter((o) => {
-      if (selectedBank && o.bank_id !== selectedBank) return false
-      if (selectedCategory && o.category !== selectedCategory) return false
-      return true
-    })
-  }, [offers, selectedBank, selectedCategory])
+  const banksInUse = useMemo(() => {
+    const ids = [...new Set(offers.map((o) => o.bank_id))]
+    return ids.map((id) => offers.find((o) => o.bank_id === id)!.bank)
+  }, [offers])
+  const catsInUse = useMemo(() => [...new Set(offers.map((o) => o.category))], [offers])
 
-  const offerBankIds = new Set(offers.map((o) => o.bank_id))
-  const relevantBanks = banks.filter((b) => offerBankIds.has(b.id))
-
-  if (loading) {
-    return (
-      <div className="page-container space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Ofertas</h1>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="eliseo-card h-24 animate-pulse bg-gray-100" />
-        ))}
-      </div>
-    )
-  }
+  const list = offers.filter((o) => (bank === 'all' || o.bank_id === bank) && (cat === 'all' || o.category === cat))
 
   return (
-    <div className="page-container space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Ofertas</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Promociones y descuentos activos de los bancos.
-        </p>
+    <div className="screen">
+      <ScreenHeader title="Ofertas" subtitle="Promociones vigentes" large
+        right={
+          <button className="tap" onClick={() => navigate('/destacados')} aria-label="Destacados" style={{ width: 40, height: 40, borderRadius: 13, border: 'none', background: 'var(--brand-deep)', color: 'var(--on-brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <Icon name="star" size={19} />
+          </button>
+        } />
+
+      {/* filtros */}
+      <div style={{ padding: '14px 0 4px' }}>
+        <ChipRow value={cat} onChange={setCat}
+          items={[['all', 'Todas'], ...catsInUse.map((c) => [c, CAT_V2[c]?.label ?? c] as [string, string])]} />
+        <ChipRow value={bank} onChange={setBank} style={{ marginTop: 8 }}
+          items={[['all', 'Todos los bancos'], ...banksInUse.map((b) => [b.id, b.short_name] as [string, string])]} />
       </div>
 
-      {/* Bank filter */}
-      {relevantBanks.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-          <button
-            onClick={() => setSelectedBank(null)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-              !selectedBank
-                ? 'bg-eliseo-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            Todos
-          </button>
-          {relevantBanks.map((bank) => (
-            <button
-              key={bank.id}
-              onClick={() => setSelectedBank(selectedBank === bank.id ? null : bank.id)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                selectedBank === bank.id
-                  ? 'bg-eliseo-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {bank.short_name}
-            </button>
-          ))}
-        </div>
-      )}
+      <div style={{ padding: '10px 20px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {loading && <div className="skel" style={{ height: 140, borderRadius: 18 }} />}
 
-      {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-        {CATEGORIES.filter((c) => c.id !== 'general').map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-            className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              selectedCategory === cat.id
-                ? 'bg-eliseo-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <span>{cat.emoji}</span>
-            {cat.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Offers list */}
-      {filtered.length === 0 ? (
-        <div className="eliseo-card p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-3">
-            <Tag size={24} className="text-eliseo-400" />
+        {!loading && list.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '36px 20px' }}>
+            <Icon name="tag" size={30} style={{ color: 'var(--ink-faint)' }} />
+            <div style={{ fontSize: 14.5, fontWeight: 600, marginTop: 10 }}>Sin ofertas con estos filtros</div>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 5 }}>Prueba con otra categoría u otro banco.</p>
           </div>
-          <p className="text-sm text-gray-500">
-            {offers.length === 0
-              ? 'No hay ofertas disponibles por el momento.'
-              : 'No hay ofertas con estos filtros.'}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filtered.map((offer, i) => {
-            const cat = CATEGORIES.find((c) => c.id === offer.category)
-            const daysLeft = offer.valid_until
-              ? Math.ceil((new Date(offer.valid_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-              : null
+        )}
 
-            const inner = (
-              <>
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: offer.bank.logo_color + '20' }}
-                >
-                  <span className="font-black text-xs" style={{ color: offer.bank.logo_color }}>
-                    {offer.bank.short_name.substring(0, 2).toUpperCase()}
-                  </span>
+        {!loading && list.map((o, i) => {
+          const exp = expiryLabel(o)
+          return (
+            <a key={o.id}
+               href={o.url ?? o.bank.website}
+               target="_blank" rel="noopener noreferrer"
+               className="tap fade-up"
+               style={{ animationDelay: `${i * 0.04}s`, display: 'block', textDecoration: 'none', color: 'inherit', background: 'var(--surface)', border: '1px solid var(--line-soft)', borderRadius: 18, padding: '16px', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 11 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: `color-mix(in oklab, ${o.bank.logo_color} 16%, white)`, color: o.bank.logo_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>{o.bank.name[0]}</div>
+                <span className="mono" style={{ fontSize: 11, color: 'var(--ink-soft)', flex: 1 }}>{o.bank.name}</span>
+                <ConfidenceBadge level={toConfLevel(o.confidence)} />
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.2 }}>{o.title}</div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 5, lineHeight: 1.45 }}>{o.description}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 13, paddingTop: 12, borderTop: '1px solid var(--line-soft)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: exp.urgent ? 'var(--warn)' : 'var(--ink-faint)' }}>
+                  <Icon name="calendar" size={14} />
+                  <span className="mono" style={{ fontSize: 11 }}>{exp.text}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-semibold text-sm text-gray-900">{offer.title}</p>
-                    {cat && (
-                      <span className="text-[10px] bg-eliseo-50 text-eliseo-600 font-semibold px-1.5 py-0.5 rounded-full">
-                        {cat.emoji} {cat.name}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 leading-relaxed">{offer.description}</p>
-                  <div className="flex items-center gap-2 flex-wrap mt-2">
-                    <span className="text-[11px] text-gray-400">{offer.bank.short_name}</span>
-                    {daysLeft !== null && (
-                      <span className={`text-[11px] font-medium flex items-center gap-1 ${
-                        daysLeft <= 3 ? 'text-red-500' : daysLeft <= 7 ? 'text-amber-500' : 'text-gray-400'
-                      }`}>
-                        <Calendar size={10} />
-                        {daysLeft <= 0 ? 'Vence hoy' : `${daysLeft} día${daysLeft !== 1 ? 's' : ''}`}
-                      </span>
-                    )}
-                    {offer.confidence && <ConfidenceBadge level={offer.confidence} />}
-                  </div>
-                </div>
-                {offer.url && (
-                  <ExternalLink size={16} className="text-eliseo-400 flex-shrink-0 mt-0.5" aria-hidden />
-                )}
-              </>
-            )
-
-            return (
-              <motion.div
-                key={offer.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className={`eliseo-card p-4 ${offer.url ? 'hover:shadow-card-hover transition-shadow' : ''}`}
-              >
-                {offer.url ? (
-                  <a
-                    href={offer.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-3"
-                    aria-label={`${offer.title} — abrir en ${offer.bank.short_name}`}
-                  >
-                    {inner}
-                  </a>
-                ) : (
-                  <div className="flex items-start gap-3">{inner}</div>
-                )}
-              </motion.div>
-            )
-          })}
-        </div>
-      )}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: 'var(--brand)' }}>Activar <Icon name="arrowUpR" size={16} /></span>
+              </div>
+            </a>
+          )
+        })}
+      </div>
+      <div style={{ height: 24 }} />
     </div>
   )
 }

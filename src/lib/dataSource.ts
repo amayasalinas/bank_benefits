@@ -5,8 +5,7 @@
  */
 import { supabase } from './supabase'
 import { mockBanks, mockCards, mockOffers, mockFeatured } from '../mocks/fixtures'
-import type { FeaturedCard } from '../mocks/fixtures'
-import type { Bank, Card, Offer } from '../types/database'
+import type { Bank, Card, CardWithBank, FeaturedCard, FeaturedCardRow, Offer } from '../types/database'
 
 export const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
@@ -58,12 +57,21 @@ export async function fetchOffers(): Promise<{
 }
 
 /**
- * Tarjetas destacadas ("Mejores del mercado").
- * En mock devuelve una selección curada. Contra Supabase, la curación de
- * destacados aún no tiene tabla → devuelve [] (pantalla con estado vacío)
- * hasta definir el esquema de afiliados.
+ * Tarjetas destacadas ("Mejores del mercado") — tabla featured_cards
+ * (supabase/migration_v2.sql), curaduría con CTA de afiliado.
+ * Si la tabla aún no existe en el proyecto, devuelve [] (estado vacío).
  */
 export async function fetchFeatured(): Promise<FeaturedCard[]> {
   if (USE_MOCKS) return mockFeatured
-  return []
+  const { data, error } = await supabase
+    .from('featured_cards')
+    .select('*, card:cards(*, bank:banks(*))')
+    .order('rank', { ascending: true })
+  if (error || !data) return []
+  return (data as (FeaturedCardRow & { card: CardWithBank })[]).map((r) => ({
+    card: r.card,
+    reason: r.reason,
+    highlight: r.highlight,
+    applyUrl: r.apply_url,
+  }))
 }

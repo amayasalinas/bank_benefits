@@ -1,42 +1,40 @@
-import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, CreditCard, Sparkles, Tag, User } from 'lucide-react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import Icon, { type IconName } from '../v2/Icon'
 
-const NAV_ITEMS = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Inicio' },
-  { path: '/my-cards', icon: CreditCard, label: 'Tarjetas' },
-  { path: '/recommender', icon: Sparkles, label: 'Recomienda' },
-  { path: '/offers', icon: Tag, label: 'Ofertas' },
-  { path: '/profile', icon: User, label: 'Perfil' },
+const items: { to: string; icon: IconName; label: string }[] = [
+  { to: '/dashboard', icon: 'home', label: 'Inicio' },
+  { to: '/my-cards', icon: 'cards', label: 'Tarjetas' },
+  { to: '/offers', icon: 'tag', label: 'Ofertas' },
+  { to: '/profile', icon: 'user', label: 'Perfil' },
 ]
 
+/** Nav inferior v2: 4 destinos + FAB central al recomendador (el momento estrella). */
 export default function BottomNav() {
+  const navigate = useNavigate()
   const location = useLocation()
+  const fabActive = location.pathname.startsWith('/recommender')
+
+  const renderItem = ({ to, icon, label }: (typeof items)[number]) => (
+    <NavLink key={to} to={to} className={({ isActive }) => 'nav-item tap' + (isActive ? ' active' : '')}>
+      <Icon name={icon} size={22} />
+      <span>{label}</span>
+    </NavLink>
+  )
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 glass border-t border-eliseo-100/50 safe-area-pb">
-      <div className="max-w-2xl mx-auto px-2">
-        <div className="flex items-center justify-around h-16">
-          {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
-            const active = location.pathname === path
-            return (
-              <Link
-                key={path}
-                to={path}
-                className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-200 ${
-                  active ? 'text-eliseo-500' : 'text-gray-400 hover:text-gray-600'
-                }`}
-              >
-                <div className={`p-1.5 rounded-xl transition-all duration-200 ${active ? 'bg-eliseo-50' : ''}`}>
-                  <Icon size={20} strokeWidth={active ? 2.5 : 1.8} />
-                </div>
-                <span className={`text-[10px] font-medium leading-none ${active ? 'text-eliseo-600' : ''}`}>
-                  {label}
-                </span>
-              </Link>
-            )
-          })}
-        </div>
+    <nav className="nav">
+      {items.slice(0, 2).map(renderItem)}
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <button
+          className="nav-fab"
+          aria-label="¿Qué tarjeta uso?"
+          onClick={() => navigate('/recommender')}
+          style={fabActive ? { background: 'var(--brand)' } : undefined}
+        >
+          <Icon name="wand" size={24} />
+        </button>
       </div>
+      {items.slice(2).map(renderItem)}
     </nav>
   )
 }

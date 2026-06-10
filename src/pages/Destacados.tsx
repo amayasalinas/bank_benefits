@@ -1,95 +1,76 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Trophy, ExternalLink, Sparkles } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { fetchFeatured } from '../lib/dataSource'
-import { TIER_LABELS, type Card, type Bank } from '../types/database'
-import type { FeaturedCard } from '../mocks/fixtures'
+import { TIER_LABELS, type FeaturedCard } from '../types/database'
+import Icon from '../components/v2/Icon'
+import ScreenHeader from '../components/v2/ScreenHeader'
+import Btn from '../components/v2/Btn'
 
 export default function Destacados() {
+  const navigate = useNavigate()
   const [featured, setFeatured] = useState<FeaturedCard[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchFeatured().then((data) => {
-      setFeatured(data)
+    fetchFeatured().then((f) => {
+      setFeatured(f)
       setLoading(false)
     })
   }, [])
 
-  if (loading) {
-    return (
-      <div className="page-container space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">Mejores del mercado</h1>
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="eliseo-card h-40 animate-pulse bg-gray-100" />
-        ))}
-      </div>
-    )
-  }
-
   return (
-    <div className="page-container space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mejores del mercado</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Tarjetas recomendadas según para qué las quieras. Comparamos todas, no las de un solo banco.
-        </p>
-      </div>
-
-      {featured.length === 0 ? (
-        <div className="eliseo-card p-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-eliseo-50 flex items-center justify-center mx-auto mb-3">
-            <Sparkles size={24} className="text-eliseo-400" />
-          </div>
-          <p className="text-sm text-gray-500">
-            Aún no hay tarjetas destacadas disponibles. Vuelve pronto.
+    <div className="screen">
+      <ScreenHeader title="Mejores del mercado" subtitle="Lo que más te conviene" onBack={() => navigate('/offers')} />
+      <div style={{ padding: '8px 20px 0' }}>
+        {/* cláusula de transparencia (PRD §4) */}
+        <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '13px 14px', borderRadius: 14, background: 'var(--brand-tint)', marginBottom: 18 }}>
+          <Icon name="shield" size={18} style={{ color: 'var(--brand)', flexShrink: 0, marginTop: 1 }} />
+          <p style={{ fontSize: 12, color: 'oklch(0.40 0.08 162)', lineHeight: 1.45 }}>
+            Te mostramos lo mejor para ti aunque no nos pague comisión. Marcamos cuándo ganamos por referirte. Esa es la regla.
           </p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {featured.map((f, i) => {
-            const card: Card & { bank: Bank } = f.card
-            return (
-              <motion.div
-                key={card.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="eliseo-card overflow-hidden"
-              >
-                {/* Visual de la tarjeta */}
-                <div className="p-5 text-white" style={{ background: card.bank.logo_color }}>
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <Trophy size={14} />
-                    <span className="text-[11px] font-bold uppercase tracking-wide">{f.reason}</span>
-                  </div>
-                  <p className="text-white/70 text-xs">{card.bank.short_name}</p>
-                  <p className="font-bold text-lg">{card.name}</p>
-                  <p className="text-white/60 text-[11px] mt-1">
-                    {card.franchise} · {TIER_LABELS[card.tier]}
-                    {card.no_annual_fee && ' · Sin cuota'}
-                  </p>
-                </div>
 
-                {/* Gancho + CTA */}
-                <div className="p-4 space-y-3">
-                  <p className="text-sm text-gray-700">{f.highlight}</p>
-                  <a
-                    href={f.applyUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="eliseo-btn-primary w-full flex items-center justify-center gap-2 text-sm"
-                    aria-label={`Solicitar ${card.name} en ${card.bank.short_name}`}
-                  >
-                    Solicítala
-                    <ExternalLink size={16} />
-                  </a>
+        {loading && <div className="skel" style={{ height: 220, borderRadius: 22 }} />}
+
+        {!loading && featured.length === 0 && (
+          <div className="card" style={{ padding: '30px 20px', textAlign: 'center' }}>
+            <Icon name="star" size={28} style={{ color: 'var(--ink-faint)' }} />
+            <div style={{ fontSize: 15, fontWeight: 600, marginTop: 10 }}>Estamos curando los destacados</div>
+            <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 5, lineHeight: 1.45 }}>
+              Comparamos el mercado con la regla de doble fuente antes de recomendarte una tarjeta nueva. Muy pronto.
+            </p>
+          </div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {featured.map((d, i) => {
+            const accent = d.card.bank.logo_color
+            const fee = d.card.no_annual_fee ? '$0 cuota' : (d.card.fee_note ?? 'Cuota según banco')
+            return (
+              <div key={d.card.id} className="card fade-up" style={{ overflow: 'hidden', animationDelay: `${i * 0.06}s` }}>
+                <div style={{ padding: '16px 18px', background: `linear-gradient(135deg, color-mix(in oklab, ${accent} 13%, white), var(--surface))` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="mono" style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: accent, background: `color-mix(in oklab, ${accent} 16%, white)`, padding: '4px 9px', borderRadius: 7 }}>{d.reason}</span>
+                    <span className="mono" style={{ fontSize: 10, color: 'var(--ink-faint)' }}>{fee}</span>
+                  </div>
+                  <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', marginTop: 12 }}>{d.card.name}</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 2 }}>
+                    {d.card.bank.name} · {d.card.franchise} {TIER_LABELS[d.card.tier] ?? d.card.tier}
+                  </div>
+                  <div className="tnum" style={{ fontSize: 15, fontWeight: 700, color: 'var(--brand-deep)', marginTop: 10 }}>{d.highlight}</div>
                 </div>
-              </motion.div>
+                <div style={{ padding: '14px 18px 18px' }}>
+                  <a href={d.applyUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+                    <Btn block variant="primary" iconR="arrowUpR">Solicitar con {d.card.bank.short_name}</Btn>
+                  </a>
+                  <p className="mono" style={{ fontSize: 9.5, color: 'var(--ink-faint)', marginTop: 8, textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Enlace de afiliado</p>
+                </div>
+              </div>
             )
           })}
         </div>
-      )}
+      </div>
+      <div style={{ height: 24 }} />
     </div>
   )
 }

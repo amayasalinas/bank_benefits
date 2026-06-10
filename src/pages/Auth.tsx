@@ -1,11 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import Wordmark from '../components/v2/Wordmark'
+import Icon from '../components/v2/Icon'
+import Btn from '../components/v2/Btn'
+
+type Mode = 'signup' | 'login'
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true)
+  const [searchParams] = useSearchParams()
+  const initialMode: Mode = searchParams.get('mode') === 'login' ? 'login' : 'signup'
+  const [mode, setMode] = useState<Mode>(initialMode)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -15,31 +21,32 @@ export default function Auth() {
 
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
+  const isSignup = mode === 'signup'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
-
     try {
-      if (isLogin) {
+      if (isSignup) {
+        if (password.length < 6) {
+          setError('La contraseña debe tener al menos 6 caracteres.')
+          return
+        }
+        const { error } = await signUp(email, password, name || undefined)
+        if (error) {
+          setError('No se pudo crear la cuenta. Intenta con otro correo.')
+        } else {
+          // Si Supabase exige confirmación de correo no habrá sesión y se muestra
+          // esta pantalla; si la sesión se crea de una, PublicRoute redirige sola.
+          setConfirmationSent(true)
+        }
+      } else {
         const { error } = await signIn(email, password)
         if (error) {
           setError('Correo o contraseña incorrectos.')
         } else {
           navigate('/dashboard', { replace: true })
-        }
-      } else {
-        if (password.length < 6) {
-          setError('La contraseña debe tener al menos 6 caracteres.')
-          setLoading(false)
-          return
-        }
-        const { error } = await signUp(email, password)
-        if (error) {
-          setError('No se pudo crear la cuenta. Intenta con otro correo.')
-        } else {
-          setConfirmationSent(true)
         }
       }
     } finally {
@@ -49,136 +56,86 @@ export default function Auth() {
 
   if (confirmationSent) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="eliseo-card p-8 max-w-sm w-full text-center"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-mint-50 flex items-center justify-center mx-auto mb-4">
-            <Mail size={28} className="text-mint-500" />
+      <div className="app">
+        <div className="screen">
+          <div style={{ padding: 'calc(34px + env(safe-area-inset-top, 0px)) 24px 24px', minHeight: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="card pop-in" style={{ padding: 28, textAlign: 'center' }}>
+              <div style={{ width: 60, height: 60, borderRadius: 19, background: 'var(--brand-tint)', color: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Icon name="checkCircle" size={28} />
+              </div>
+              <h2 style={{ fontSize: 21, fontWeight: 700, letterSpacing: '-0.02em' }}>Revisa tu correo</h2>
+              <p style={{ fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.5, marginTop: 8 }}>
+                Enviamos un enlace de confirmación a <strong>{email}</strong>. Haz clic en él para activar tu cuenta.
+              </p>
+              <Btn block variant="ghost" style={{ marginTop: 22 }} onClick={() => { setConfirmationSent(false); setMode('login') }}>
+                Volver a iniciar sesión
+              </Btn>
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Revisa tu correo</h2>
-          <p className="text-sm text-gray-500 mb-6">
-            Enviamos un enlace de confirmación a <strong>{email}</strong>. Haz clic en él para activar tu cuenta.
-          </p>
-          <button
-            onClick={() => {
-              setConfirmationSent(false)
-              setIsLogin(true)
-            }}
-            className="eliseo-btn-secondary w-full"
-          >
-            Volver a iniciar sesión
-          </button>
-        </motion.div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="px-4 pt-4">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1 text-gray-400 hover:text-gray-600 transition-colors"
-        >
-          <ArrowLeft size={20} />
-          <span className="text-sm">Volver</span>
-        </button>
-      </div>
+    <div className="app">
+      <div className="screen">
+        <div style={{ padding: 'calc(30px + env(safe-area-inset-top, 0px)) 24px 24px', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
+          <button className="tap" onClick={() => navigate('/')} aria-label="Volver" style={{ width: 38, height: 38, borderRadius: 12, border: '1px solid var(--line)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink)', cursor: 'pointer' }}>
+            <Icon name="chevronL" size={20} />
+          </button>
 
-      {/* Form */}
-      <div className="flex-1 flex items-center justify-center px-4 pb-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-sm"
-        >
-          <div className="text-center mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-eliseo flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-black text-2xl">E</span>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {isLogin ? 'Bienvenido de vuelta' : 'Crea tu cuenta'}
+          <div style={{ marginTop: 30 }}>
+            <Wordmark size={20} />
+            <h1 style={{ fontSize: 27, fontWeight: 800, letterSpacing: '-0.02em', marginTop: 22 }}>
+              {isSignup ? 'Crea tu cuenta' : 'Bienvenido de vuelta'}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {isLogin ? 'Ingresa a tu billetera inteligente' : 'Empieza a maximizar tus tarjetas'}
+            <p style={{ fontSize: 15, color: 'var(--ink-soft)', marginTop: 6 }}>
+              {isSignup ? 'Empieza a optimizar cada compra en 2 minutos.' : 'Tus tarjetas y tu ahorro te esperan.'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="email"
-                placeholder="Correo electrónico"
-                aria-label="Correo electrónico"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="input-field pl-11"
-              />
-            </div>
+          {/* Toggle registrarse / ingresar */}
+          <div style={{ display: 'flex', gap: 4, background: 'var(--surface-2)', borderRadius: 999, padding: 4, marginTop: 26, border: '1px solid var(--line-soft)' }}>
+            {([['signup', 'Registrarme'], ['login', 'Ingresar']] as [Mode, string][]).map(([m, l]) => (
+              <button key={m} type="button" onClick={() => { setMode(m); setError('') }} className="tap" style={{
+                flex: 1, padding: '10px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit',
+                fontSize: 14, fontWeight: 600,
+                background: mode === m ? 'var(--surface)' : 'transparent',
+                color: mode === m ? 'var(--ink)' : 'var(--ink-faint)',
+                boxShadow: mode === m ? 'var(--shadow-sm)' : 'none' }}>{l}</button>
+            ))}
+          </div>
 
-            <div className="relative">
-              <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Contraseña"
-                aria-label="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="input-field pl-11 pr-11"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {isSignup && (
+                <input className="field" placeholder="Tu nombre" aria-label="Tu nombre" value={name} onChange={e => setName(e.target.value)} autoComplete="name" />
+              )}
+              <input className="field" type="email" required placeholder="Correo" aria-label="Correo" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
+              <div style={{ position: 'relative' }}>
+                <input className="field" type={showPassword ? 'text' : 'password'} required placeholder="Contraseña" aria-label="Contraseña" value={password} onChange={e => setPassword(e.target.value)} autoComplete={isSignup ? 'new-password' : 'current-password'} style={{ paddingRight: 48 }} />
+                <button type="button" className="tap" onClick={() => setShowPassword(s => !s)} aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--ink-faint)', cursor: 'pointer', display: 'flex' }}>
+                  <Icon name="eye" size={18} />
+                </button>
+              </div>
             </div>
 
             {error && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-sm text-red-500 text-center"
-              >
-                {error}
-              </motion.p>
+              <p className="fade-in" style={{ fontSize: 13, color: '#c0322e', textAlign: 'center', marginTop: 14 }}>{error}</p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="eliseo-btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading
-                ? 'Cargando...'
-                : isLogin
-                  ? 'Iniciar sesión'
-                  : 'Crear cuenta'}
-            </button>
+            <Btn block variant="primary" type="submit" style={{ marginTop: 18 }} iconR="arrowR" disabled={loading}>
+              {loading ? 'Un momento…' : isSignup ? 'Crear cuenta' : 'Ingresar'}
+            </Btn>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}{' '}
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin)
-                setError('')
-              }}
-              className="text-eliseo-500 font-semibold hover:text-eliseo-600 transition-colors"
-            >
-              {isLogin ? 'Regístrate' : 'Inicia sesión'}
-            </button>
+          <div style={{ flex: 1 }} />
+          <p style={{ fontSize: 11, lineHeight: 1.5, color: 'var(--ink-faint)', textAlign: 'center', marginTop: 20 }}>
+            Al continuar aceptas el tratamiento de tus datos según la Ley 1581 (Habeas Data). Nunca pedimos tu número de tarjeta completo, CVV ni claves bancarias.
           </p>
-        </motion.div>
+        </div>
       </div>
     </div>
   )
