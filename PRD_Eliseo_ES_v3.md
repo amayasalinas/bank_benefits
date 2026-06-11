@@ -1,6 +1,8 @@
 # Documento de Requisitos del Producto (PRD) — Eliseo v3 (Edición Validada: Estrategia + Producto + Evidencia de Mercado)
 
-> **Estado del documento:** v3 (junio 2026). Evoluciona el PRD v2 con tres insumos nuevos: (1) **validación de datos de mercado contra fuentes públicas** (jun 2026, ver §18 Referencias), (2) **benchmark internacional 2025–2026** de la categoría (MaxRewards, CardPointers, Kudos, Uthrive, AwardWallet, Curve), y (3) **absorción del contenido crítico** del `Blueprint_Estrategico_Eliseo_ES.md` y de `customer-voice-analysis.md` que el v2 dejaba por referencia. `PRD_Eliseo_ES_v2.md` se conserva como histórico.
+> **Estado del documento:** v3 (junio 2026) · **actualizado 11-jun-2026** tras el despliegue a producción. Evoluciona el PRD v2 con tres insumos nuevos: (1) **validación de datos de mercado contra fuentes públicas** (jun 2026, ver §18 Referencias), (2) **benchmark internacional 2025–2026** de la categoría (MaxRewards, CardPointers, Kudos, Uthrive, AwardWallet, Curve), y (3) **absorción del contenido crítico** del `Blueprint_Estrategico_Eliseo_ES.md` y de `customer-voice-analysis.md` que el v2 dejaba por referencia. `PRD_Eliseo_ES_v2.md` se conserva como histórico.
+>
+> **Actualización 11-jun-2026 (estados sincronizados con producción):** el rediseño v2 "verde bosque" (prototipo Claude Design) está EN PRODUCCIÓN en Vercel y GitHub Pages, conectado a Supabase real (esquema + seed + migración v2 aplicados). El motor v2 (tabla VE, bifurcación totalero/rotativo, niveles de confianza) está implementado. Se sumó el **paquete de claridad UX** con patrones de MaxRewards (onboarding por objetivos, checklist de activación, estados vacíos que enseñan, bloques de confianza, carrusel en landing, multi-add de tarjetas). Ver Changelog al final.
 >
 > **Este `.md` es la fuente canónica.** Audiencia: equipo de producto/ingeniería + inversionistas. El documento es autocontenido: se sostiene solo, sin necesidad de leer el Blueprint.
 >
@@ -183,27 +185,35 @@ Un emisor único jamás puede ser un optimizador neutral entre todas tus tarjeta
 ## 6. Alcance del Producto (MoSCoW, recortado al Optimizador)
 
 **Must Have (MVP — "Esqueleto Andante"):**
-- ✅ Autenticación (Registro / Inicio de sesión).
-- ✅ Agregar tarjeta sin datos sensibles (banco/modelo + apodo + últimos 4 dígitos).
-- ✅ Dashboard con tarjeta principal y métricas resumidas.
-- ✅ Motor Recomendador por categoría.
-- ✅ Vista de detalle de tarjeta con beneficios categorizados.
-- 🔲 Perfil de pago (totalero/rotativo) en onboarding — gobierna la lógica del recomendador (§8).
-- 🔲 Normalización a pesos efectivos (VE) en el recomendador — con tabla VE recalibrada (§8.2).
+- ✅ Autenticación (Registro / Inicio de sesión). *(Supabase Auth con confirmación de correo; mensajes de error específicos.)*
+- ✅ Agregar tarjeta sin datos sensibles (banco/modelo + apodo + últimos 4 dígitos). *(11-jun: con **multi-selección** — varias tarjetas del mismo banco en una pasada.)*
+- ✅ Dashboard con tarjeta principal y métricas resumidas. *(v2: héroe de potencial estimado + checklist de activación.)*
+- ✅ Motor Recomendador — **por comercio** con monto ajustable y "La usé" (v2; supera el "por categoría" del v1).
+- ✅ Vista de detalle de tarjeta con beneficios categorizados (% efectivo + confianza por categoría).
+- ✅ Perfil de pago (totalero/rotativo) en onboarding — capturado en AddCard y persistido (`cards_user.payment_profile`); gobierna la bifurcación del recomendador (§8). *(Construido 10-jun-2026.)*
+- ✅ Normalización a pesos efectivos (VE) en el recomendador — `src/lib/ve.ts` + adaptador `walletView.ts` con VE dual para LifeMiles (§8.2). *(Construido 10-jun-2026; calibración con redenciones reales pendiente.)*
 
 **Should Have:**
-- ✅ Feed dinámico de Ofertas con vencimientos.
+- ✅ Feed dinámico de Ofertas con vencimientos (datos reales de `offers`; urgencia visual ≤7 días).
 - ✅ Filtrado de Ofertas por Banco y Categoría.
-- ✅ Niveles de confianza (Confirmado/Probable/Acción) en cada beneficio mostrado. *(Construido jun 2026 — UI/badge; el cálculo automático del nivel sigue pendiente del motor v2.)*
-- ✅ CTA saliente rastreable en ofertas. *(Construido jun 2026: `Offer.url` + oferta clicable.)*
-- ✅ "Destacados / Mejores del mercado" (afiliados). *(Construido jun 2026: ruta `/destacados` + CTA de afiliado.)*
-- Recomendaciones de portafolio (solicitar/conservar/cancelar, §8.4) — patrón validado por Kudos "Dream Wallet" como motor de ingresos #1 de la categoría.
+- ✅ Niveles de confianza (Confirmado/Probable/Acción) en cada beneficio mostrado. *(11-jun: el nivel se deriva de `benefits.confidence`/`offers.confidence` de la BD; la asignación es curaduría humana, no motor automático — por diseño de §11.)*
+- ✅ CTA saliente rastreable en ofertas (`offers.url`, link real con `rel="noopener"`).
+- ✅ "Destacados / Mejores del mercado" (afiliados) — tabla `featured_cards` real, cláusula de transparencia (§4) y etiqueta "Enlace de afiliado". *(Construido 10-jun-2026.)*
+- 🟡 Recomendaciones de portafolio (solicitar/conservar/cancelar, §8.4) — patrón validado por Kudos "Dream Wallet" como motor de ingresos #1 de la categoría. *(Parcial 11-jun: MyCards muestra la alerta "Revisa tu X: aporta $Y/año pero su cuota suma $Z — considera cancelarla" cuando hay dato de cuota; falta el módulo completo solicitar/cancelar.)*
 
 **Could Have (Fase 1.5, post-gate de 90 días):**
 - 🔲 Notificaciones push para ofertas por vencer.
 - 🔲 Reporte semanal/mensual de ahorro real (gancho de retención + mitigación del churn "aprende y se va").
-- 🆕 **"Card Value" anti-cuota de manejo:** cuánto valor extrajo el usuario de cada tarjeta vs su cuota de manejo anual ("esta tarjeta te costó $348k y te devolvió $520k"). Bajo esfuerzo sobre datos ya capturados; resuena fuerte en Colombia donde la cuota de manejo es el dolor más visible, y alimenta directamente la recomendación de cancelar/conservar.
+- 🆕 **"Card Value" anti-cuota de manejo:** cuánto valor extrajo el usuario de cada tarjeta vs su cuota de manejo anual ("esta tarjeta te costó $348k y te devolvió $520k"). Bajo esfuerzo sobre datos ya capturados; resuena fuerte en Colombia donde la cuota de manejo es el dolor más visible, y alimenta directamente la recomendación de cancelar/conservar. *(El insumo `cards.fee_month` ya existe en la BD; falta poblarlo con datos curados.)*
 - 🆕 **Reporte de ahorro compartible** (validación social: "este mes ahorré $180k usando las tarjetas correctas") — el loop viral que el GTM por boca a boca necesita (§2).
+
+**🆕 Paquete de claridad UX (construido 11-jun-2026 — patrones de MaxRewards, ver `Capturas de pantallas_MAXREWARDS/`):**
+- ✅ **Onboarding por objetivos** (`/goals`): "¿Qué quieres lograr?" (millas/cashback/puntos/explorar) → `user_metadata.reward_goal`. Personaliza el copy del Dashboard y desempata el ranking SOLO cuando hay <5% de diferencia de ahorro (la capa UP del §8.2 — nunca altera el ahorro mostrado).
+- ✅ **Checklist de activación** en Dashboard: 5 pasos con barra de progreso (cuenta → 1ª tarjeta → 2ª tarjeta → 1ª consulta → ofertas). Ataca directamente el riesgo de abandono D1–D7 (§3.2).
+- ✅ **Estados vacíos que enseñan:** el recomendador sin tarjetas muestra una recomendación de ejemplo etiquetada EJEMPLO en vez de un vacío genérico.
+- ✅ **Bloques de confianza** (TrustNotes) en registro y alta de tarjeta: nunca pedimos el número completo / no vendemos datos (Ley 1581) / solo tú ves tus tarjetas.
+- ✅ **Landing con carrusel** de 3 value props (recomendación de ejemplo, ofertas, valor anual) — la app se ve funcionando antes de pedir el registro.
+- ✅ **Multi-add de tarjetas:** selección múltiple por banco con un solo guardado — clave para el ICP de ≥2 tarjetas.
 
 **Won't Have (v1.0 → reafirmado con evidencia):**
 - Integración Open Finance en tiempo real (Fase 2, post-validación; APIs obligatorias operativas ~2027/28).
@@ -240,11 +250,13 @@ Personas detalladas vigentes en `.product/PERSONAS/` (Gloria Espinosa, Sandra Mo
 ### 8.1 Core: Gestionar Billetera (de v1, conservado)
 
 Historia: Como usuario, quiero agregar una tarjeta seleccionando banco y modelo, para que la app sepa qué beneficios tengo.
-- [x] Lista de bancos buscable (tradicionales y digitales).
-- [x] Filtra modelos tras seleccionar banco.
+- [x] Lista de bancos buscable (tradicionales y digitales) — catálogo real de 13 bancos.
+- [x] Filtra modelos tras seleccionar banco (catálogo real de 64 tarjetas) y permite **selección múltiple** (11-jun).
 - [x] Apodo (máx 40) y últimos 4 dígitos (máx 4) opcionales.
-- [x] Guarda (user_id, card_id, nickname, last_four).
-- 🔲 Captura `perfil_pago` (totalero/rotativo/mixto), gasto aproximado por categoría y preferencia (millas/cashback) en el onboarding.
+- [x] Guarda (user_id, card_id, nickname, last_four) con RLS por usuario.
+- ✅ Captura `perfil_pago` (totalero/rotativo) en el alta — persiste en `cards_user.payment_profile`. *(10-jun-2026.)*
+- ✅ Captura preferencia de recompensa (millas/cashback/puntos) en `/goals` → `user_metadata.reward_goal`. *(11-jun-2026.)*
+- 🔲 Captura gasto aproximado por categoría (hoy el VEO usa el perfil de gasto default del ICP, etiquetado "estimado").
 
 ### 8.2 Core: Motor de Recomendación v2 (determinista; tabla VE recalibrada en v3)
 
@@ -276,14 +288,15 @@ Resuelve la Pregunta Abierta 9.1 de v1 ("¿cómo rankear 10% cashback vs x3 mill
 
 **🆕 Sin ML en Fase 1 (explícito, del Blueprint Parte II).** El motor es **determinista**: reglas + tabla VE + resolución de promos (CSP para stacking) + validación manual del dato. El ML entra solo en Fase 2+, cuando exista el dataset de `recommendations` con ahorro real y, post-Open Finance, transacciones reales. Esto es una ventaja, no una carencia: explicabilidad total ("por qué esta tarjeta: $X de cashback + $Y de promo − $Z de cuota") y cero costo de inferencia.
 
-**Criterios de aceptación (v2/v3):**
-- [x] Recupera tarjetas del usuario y beneficios por `category_id`.
-- 🔲 Calcula `r` efectiva normalizada vía tabla VE (no pesos por tipo) — **con la tabla recalibrada de arriba y VE dual para LifeMiles.**
-- 🔲 Aplica bifurcación totalero/rotativo.
-- 🔲 Incorpora promociones vigentes (con vigencia, tope, canal, elegibilidad) y resuelve stacking (grupos exclusivos vs apilables).
-- 🟡 Asigna nivel de confianza (Confirmado/Probable/Acción) a cada recomendación. *(UI construida jun 2026; la asignación automática sigue pendiente del motor/datos.)*
-- [x] Resultados < 500 ms (meta NFR < 100 ms con índices y precálculo, §13).
-- [x] Mensaje de respaldo si ninguna tarjeta tiene beneficio en la categoría.
+**Criterios de aceptación (v2/v3 — actualizados 11-jun-2026):**
+- [x] Recupera tarjetas del usuario y beneficios por categoría (hook `useUserCards` + adaptador `walletView`).
+- ✅ Calcula `r` efectiva normalizada vía tabla VE (no pesos por tipo) — implementado en `src/lib/ve.ts` + `walletView.ts` con la tabla recalibrada y VE dual para LifeMiles. Las meta-categorías de acumulación base (puntos/cashback "en todas las compras") alimentan la tasa general. El VEO anual solo cuenta acumulación recurrente (los descuentos situacionales rankean pero no inflan el estimado). *(Smoke test ejecutable: `scripts/smoke-engine.ts`.)*
+- ✅ Aplica bifurcación totalero/rotativo — los rotativos van al final del ranking con advertencia; recomendar millas a un rotativo queda bloqueado por diseño.
+- 🟡 Incorpora promociones vigentes por comercio (overlay con boost, nota y confianza). *(Parcial: 10 comercios + 4 promos demo como constantes front marcadas "Probable" — falta tabla `merchants`/`merchant_promos` con vigencia/tope/canal y resolución de stacking.)*
+- ✅ Asigna nivel de confianza (Confirmado/Probable/Acción) a cada recomendación, derivado de la curaduría (`benefits.confidence`); sin dato → "Probable" (nunca se promete lo no validado).
+- [x] Resultados < 500 ms (cálculo en cliente sobre la billetera; meta NFR < 100 ms, §13).
+- [x] Mensaje de respaldo si ninguna tarjeta tiene beneficio en la categoría; tarjetas sin datos muestran "datos en camino", nunca 0% engañoso.
+- ✅ Capa UP (preferencias): la meta del usuario (`reward_goal`) desempata SOLO con <5% de diferencia de ahorro y se señala con "Va con tu meta". El VEO mostrado nunca cambia. *(11-jun-2026.)*
 
 ### 8.3 Core: Ofertas Explorables (de v1)
 
@@ -302,9 +315,11 @@ Resuelve la Pregunta Abierta 9.1 de v1 ("¿cómo rankear 10% cashback vs x3 mill
 
 ## 9. Flujos Lógicos
 
-**Flujo 1 — Agregar tarjeta (ruta feliz):** banco → modelo → apodo → `POST /api/user-cards` → inserta en `cards_user` → redirige al dashboard con actualización optimista. 🔲 Tras la primera tarjeta, solicitar `perfil_pago` y gasto por categoría.
+**Flujo 1 — Agregar tarjeta (ruta feliz, actualizado 11-jun):** banco → modelos (multi-selección con contador) → detalles (1 tarjeta: apodo/últimos 4/perfil; varias: resumen + perfil de pago único) → inserta en `cards_user` (con `payment_profile`; la primera queda como principal) → dashboard con toast.
 
-**Flujo 2 — Recomendador sin tarjetas:** recuento de billetera = 0 → estado vacío con CTA a "Agregar tarjeta".
+**Flujo 1b 🆕 — Onboarding de usuario nuevo (11-jun):** registro → (confirmación de correo si aplica) → `/goals` ("¿Qué quieres lograr?") → alta de tarjetas multi-add → dashboard con checklist de activación guiando los pasos restantes.
+
+**Flujo 2 — Recomendador sin tarjetas:** billetera = 0 → recomendación de ejemplo etiquetada EJEMPLO ("así se ve una recomendación") + CTA a "Agregar mi primera tarjeta". *(Antes: vacío genérico.)*
 
 **Flujo 3 — Manejo de confianza/incertidumbre:**
 1. Usuario consulta "voy a comprar en [comercio]".
@@ -327,7 +342,7 @@ Resuelve la Pregunta Abierta 9.1 de v1 ("¿cómo rankear 10% cashback vs x3 mill
 - `cards_user` (billetera) — (user_id, card_id, nickname, last_four, is_primary) + cupo_disp, dia_corte, soft-delete `removed_at`.
 - `recommendations` — log inmutable (contexto → tarjeta → ahorro estimado → ¿seguida? → ahorro real). Métrica + dataset de ML futuro.
 
-> ⚠️ **Bug heredado a resolver:** el front consulta tablas en inglés (`cards_user`, `cards`, `banks`, `benefits`) pero `supabase/schema.sql` define nombres en español (`user_cards`, `bancos`, `tarjetas`, `beneficios_*`) → contra Supabase real devuelve vacío. **Decisión (v2, vigente):** unificar a un solo idioma de esquema (recomendado inglés, consistente con `src/types/database.ts`) y migrar. El front puede seguir desacoplado con `VITE_USE_MOCKS=true` mientras tanto.
+> ✅ **RESUELTO (10-jun-2026):** el desajuste histórico de esquema front↔BD quedó cerrado. Se aplicaron en Supabase real, en orden: `migration.sql` (tablas en inglés: banks/cards/benefits/franchise_benefits/cards_user/offers con RLS), `seed.sql` (13 bancos, 64 tarjetas, 71 beneficios) y `migration_v2.sql` (aditiva: `cards.fee_month`, `cards_user.payment_profile`, `benefits.confidence`, `offers.url`/`confidence`, tabla `featured_cards` con 3 destacados). Verificado por REST con flujo completo (insert de billetera + RLS por usuario). Las tablas viejas del v1 (`user_cards`, `promotions`) quedaron intactas y sin uso — pueden eliminarse en una limpieza futura coordinada. Pendiente de datos: poblar `cards.fee_month` y validar/ampliar `offers` (`seed_offers.sql` disponible).
 
 **Privacidad (reafirmado y reforzado por benchmark):** RLS por usuario en `cards_user`; no se recopilan PAN/CVV/fecha de vencimiento ni credenciales bancarias (fuera de alcance PCI-DSS; lección MaxRewards §5.3; dealbreaker de Gloria §3.1). Habeas Data (Ley 1581): consentimiento explícito, finalidad, RNBD — desde el día 1 al capturar gasto.
 
@@ -385,38 +400,41 @@ Capital a PMF: $0.3–1.1M USD. Caso C es el único venture-grade y es capital-e
 **🆕 Frescura del dato (NFR de producto):** 100% de promos recomendadas con verificación ≤7 días; 0 beneficios mostrados en estado "borrador"; medible vía panel de operación de datos.
 **Escalabilidad:** lecturas vía Edge Functions/CDN de Supabase; objetivo 1.000 usuarios concurrentes (v1) → diseño de datos preparado para 1M (schemas por dominio, versionamiento, particionado).
 **Seguridad:** AuthN con JWT Supabase; AuthZ con RLS Postgres; HTTPS/TLS 1.3. Consentimientos Open Finance inmutables + secretos en Vault (Fase 2).
-**Stack (de v1):** Frontend React (Vite) + Tailwind + Framer Motion en Vercel/Netlify. Backend/DB Supabase (Postgres, Auth, Edge Functions). Evolución: ingesta de datos semi-automatizada, y futura extracción de dominios a servicios (los schemas ya están aislados).
+**Stack (actualizado 11-jun):** Frontend React 18 + TypeScript (Vite) con design system propio en CSS (variables oklch) + Tailwind utilitario; animaciones CSS puras (Framer Motion y lucide-react fueron eliminados — bundle 22% más liviano). Deploy en Vercel (producción) y GitHub Pages (alterno). Backend/DB Supabase (Postgres + RLS, Auth con user_metadata). Evolución: ingesta de datos semi-automatizada, y futura extracción de dominios a servicios.
 
 ---
 
-## 14. Diseño y UX (Sistema Visual — conservado)
+## 14. Diseño y UX (Sistema Visual v2 "verde bosque" — EN PRODUCCIÓN desde 10-jun-2026)
 
-**Principios:** mobile-first (`max-w-2xl`, nav inferior fija de 5 ítems, `pb-24`); limpio y suave (`rounded-2xl`, sombras violeta, jerarquía tipográfica); con vida (micro-animaciones Framer Motion, `layoutId`, `active:scale-95`).
+> El sistema violeta/Inter del v1 fue reemplazado por completo por el diseño del prototipo de Claude Design ("La Suiza de las tarjetas": tinta + papel + verde bosque). El prototipo de referencia vive en `ELISEO V2/` (repo propio: `eliseo-prototype`).
 
-**Color:** primario `eliseo` violeta (500 `#5B4CF5`, 600 `#4A3DE3`); éxito `mint` (`#10B981`); acento `coral` (`#FF6B57`); fondo `#F7F8FF`, superficie `#FFFFFF`, texto `#0F0F23`; gradientes por nivel de tarjeta (gold/platinum/black).
+**Principios:** mobile-first (shell `.app` fullscreen 100dvh, columna de 480px centrada en desktop, nav inferior de 5 ítems con FAB central al recomendador); editorial y cálido (papel/tinta, esquinas `--r` 16–30px, sombras suaves); con vida (animaciones CSS `fade-up`/`pop-in`/`shimmer` — sin librerías de animación).
 
-**Tipografía:** Inter. Títulos `text-2xl font-bold`; secciones `text-lg font-bold`; cuerpo `text-sm`; metadatos `text-xs`.
+**Color (variables oklch en `src/index.css`):** marca verde bosque `--brand`/`--brand-deep` (botones, FAB); neutrales cálidos `--paper`/`--surface`/`--ink`; confianza `--ok`/`--warn`/`--info` con tints; premium `--gold`; superficies héroe oscuras `--hero-a #1c3a2c`/`--hero-b` con acento `--hero-accent #9ad9b0` (landing, héroe del dashboard, resultado del recomendador).
 
-**Componentes (`index.css`):** `eliseo-card`, `eliseo-btn-primary/-secondary/-outline`, `input-field`, `glass` (nav con backdrop-blur); `ConfidenceBadge` (niveles de confianza); iconos `lucide-react`.
+**Tipografía:** Schibsted Grotesk (display/cuerpo, 400–900) + IBM Plex Mono (números tabulares, etiquetas `eyebrow`, metadatos).
 
-**Inventario de pantallas:**
+**Componentes (`src/components/v2/`):** Icon (44 SVG propios de línea), ConfidenceBadge, GlyphTile, RewardChip, CardVisual (tratamiento matte con borde de acento del banco), ScreenHeader, Section, Btn, Wordmark, Toast, MiniStat, Fact, ChipRow, TrustNotes, SampleRecommendation, ActivationChecklist.
+
+**Inventario de pantallas (estado real en producción):**
 
 | Ruta | Pantalla | Estado |
 |---|---|---|
-| `/` | Landing | ✅ |
-| `/auth` | Login / Registro | ✅ |
-| `/dashboard` | Tarjeta principal + stats + categorías | ✅ |
-| `/my-cards` | Lista de billetera | ✅ |
-| `/add-card` | Alta en 3 pasos | ✅ |
-| `/card-detail/:id` | Detalle + beneficios (con nivel de confianza) | ✅ |
-| `/recommender` | Recomendador por categoría | ✅ (🔲 motor v2) |
-| `/offers` | Feed de ofertas con filtros + link saliente + nivel de confianza | ✅ |
-| `/profile` | Perfil + privacidad | ✅ (🔲 perfil_pago) |
-| `/destacados` | "Mejores del mercado" (afiliados) | ✅ *(construido jun 2026)* |
+| `/` | Landing con carrusel de 3 value props + dots | ✅ |
+| `/auth` | Login / Registro (toggle, confirmación de correo, TrustNotes) | ✅ |
+| `/goals` 🆕 | Onboarding por objetivos ("¿Qué quieres lograr?") | ✅ *(11-jun)* |
+| `/dashboard` | Héroe de potencial estimado + checklist de activación + categorías + teaser destacados | ✅ |
+| `/my-cards` | Billetera con CardVisual + alerta de portafolio ("Revisa tu X") | ✅ |
+| `/add-card` | Alta en 3 pasos con **multi-selección** y perfil de pago | ✅ |
+| `/card-detail/:id` | Hechos clave (VEO/cuota/recompensa/perfil) + % efectivo por categoría con confianza + perks | ✅ |
+| `/recommender` | **Por comercio**: búsqueda, monto ajustable, resultado estrella con "por qué en pesos", promo, "La usé" | ✅ motor v2 |
+| `/offers` | Feed real con filtros, urgencia de vencimiento y link saliente | ✅ |
+| `/profile` | Perfil real (nombre/correo/meta), stats, privacidad, signOut | ✅ |
+| `/destacados` | `featured_cards` real + cláusula de transparencia + etiqueta de afiliado | ✅ |
 
 **Categorías (11):** General 🔧 · Cashback 💰 · Puntos/Millas 🏆 · Viajes ✈️ · Restaurantes 🍽️ · Entretenimiento 🎬 · Supermercados 🛒 · Combustible ⛽ · Streaming 📺 · Moda 👗 · Seguros 🛡️.
 
-**Tono de voz:** español de Colombia, cercano, segunda persona; mensajes breves; estados vacíos siempre con CTA. Todo mensaje de ahorro incluye su nivel de confianza y el "por qué" en pesos. 🆕 El ahorro siempre se expresa en **pesos del período** ("este mes te recuperé $43.500"), nunca solo en puntos o porcentajes — requisito de Sandra (§3.1).
+**Tono de voz:** español de Colombia, cercano, segunda persona; mensajes breves; estados vacíos siempre con CTA — y desde el 11-jun, **estados vacíos que enseñan** (muestran la UI de ejemplo, patrón MaxRewards). Todo mensaje de ahorro incluye su nivel de confianza y el "por qué" en pesos. El ahorro siempre se expresa en **pesos del período** ("este mes te recuperé $43.500"), nunca solo en puntos o porcentajes — requisito de Sandra (§3.1). Todo estimado se etiqueta "estimado"; lo no validado dice "Probable" o "datos en camino", nunca un dato inventado.
 
 ---
 
@@ -471,20 +489,22 @@ Capital a PMF: $0.3–1.1M USD. Caso C es el único venture-grade y es capital-e
 4. 🔴 El dato de promociones se puede mantener fresco a escala (el moat).
 5. 🟠 La migración a marketplace/B2B es ejecutable (define caso B vs C).
 
-> ⚠️ **Nota de coherencia (vigente):** el Blueprint recomienda **validar 90 días con el concierge manual (WhatsApp) antes de construir software**. La app React (incluidos los features de §6 ya construidos) es producto de **Fase 1 post-validación**; se está desarrollando en paralelo por decisión del equipo.
+> ⚠️ **Nota de coherencia (actualizada 11-jun):** el Blueprint recomienda **validar 90 días con el concierge manual (WhatsApp) antes de construir software**. Por decisión del equipo, la app se construyó en paralelo y **ya está en producción** (Vercel + Supabase). Esto no reemplaza el gate de 90 días: las 5 hipótesis siguen sin validar y la app es ahora la herramienta para validarlas con los primeros 15–30 usuarios del ICP (en lugar del WhatsApp puro). El riesgo asumido: capital de construcción gastado antes de validar demanda — mitigado porque el costo fue marginal (desarrollo propio sobre el prototipo).
 
 ---
 
 ## 17. Preguntas Abiertas (estado v3)
 
-1. **Ranking del recomendador** → ✅ RESUELTO (v2) vía normalización VE + score de dos capas (§8.2). 🆕 v3 corrige la tabla VE con valores de mercado; pendiente solo calibrar `p_red`/`breakage` con redenciones reales del piloto.
-2. **Ingesta de datos** → 🟡 Estrategia definida (§11) + restricción estructural confirmada (sin APIs hasta ~2027/28). Pendiente: ejecutar y medir costo real a 100 usuarios manuales.
-3. **Reconciliación de esquema front↔BD** → 🔲 En curso — unificar a inglés y migrar (§10).
+1. **Ranking del recomendador** → ✅ RESUELTO E IMPLEMENTADO (10-jun): normalización VE + score de dos capas en producción (§8.2). Pendiente solo calibrar `p_red`/`breakage` con redenciones reales del piloto.
+2. **Ingesta de datos** → 🟡 Estrategia definida (§11) + restricción estructural confirmada (sin APIs hasta ~2027/28). Pendiente: ejecutar y medir costo real a 100 usuarios manuales. 🆕 Próximo paso técnico: migrar comercios/promos de constantes front a tablas `merchants`/`merchant_promos` con vigencia y validación.
+3. **Reconciliación de esquema front↔BD** → ✅ RESUELTO (10-jun): esquema en inglés aplicado a Supabase real con seed completo y migración aditiva v2 (§10).
 4. **Calibración de `p_red`/`breakage` por programa** → 🟡 v3 aporta proxies globales (20–30% retail, 70–85% viajes); falta el dato propio del piloto.
 5. **Política de elegibilidad de promos segmentadas** ("clientes seleccionados") — cómo estimar `p_elegible`.
-6. 🆕 **CPA real de bancos colombianos** — la incógnita más cara del plan; acción: cotizar Admitad LatAm / Impact / banco directo en los primeros 30 días.
-7. 🆕 **¿Agregador puente (Finerio) pre-Open Finance?** — evaluar costo/beneficio tras el gate de 90 días, solo si la verificación de gasto demuestra mover la aguja de retención.
-8. 🆕 **Vigilancia competitiva** — revalidar trimestralmente que el espacio LatAm sigue vacío (Crunchbase/ProductHunt) y monitorear despliegue de comercio agéntico de Visa/Mastercard en la región.
+6. **CPA real de bancos colombianos** — la incógnita más cara del plan; acción: cotizar Admitad LatAm / Impact / banco directo en los primeros 30 días.
+7. **¿Agregador puente (Finerio) pre-Open Finance?** — evaluar costo/beneficio tras el gate de 90 días, solo si la verificación de gasto demuestra mover la aguja de retención.
+8. **Vigilancia competitiva** — revalidar trimestralmente que el espacio LatAm sigue vacío (Crunchbase/ProductHunt) y monitorear despliegue de comercio agéntico de Visa/Mastercard en la región.
+9. 🆕 **Correo transaccional** — el SMTP integrado de Supabase limita ~2 confirmaciones/hora (incidente 10-jun, mitigado con mensajes específicos). Decidir antes del piloto: desactivar confirmación de correo (fricción cero, suficiente para 15–30 usuarios) o configurar SMTP propio (Resend/Brevo).
+10. 🆕 **Datos por curar (dueña de BD):** poblar `cards.fee_month` (activa Card Value y la recomendación de cancelar), validar/ampliar `offers` (`seed_offers.sql` listo), y a futuro `featured_cards.welcome_bonus` (bono de bienvenida cuantificado, patrón MaxRewards).
 
 ---
 
@@ -504,6 +524,23 @@ Capital a PMF: $0.3–1.1M USD. Caso C es el único venture-grade y es capital-e
 | Riesgos | 5 hipótesis al final | Sección propia: 7 riesgos ordenados por letalidad con mitigaciones + concierge detallado con presupuesto |
 | GTM | Implícito | Explícito: comunidades de millas + creadores con revenue share + loop viral del reporte compartible; NO paid media |
 | Fricción | NFR de latencia técnica | + Presupuesto de fricción de producto: <10 s en punto de venta (umbral de abandono) |
+
+---
+
+## Actualización 11-jun-2026 — del papel a producción
+
+| Hito | Estado |
+|---|---|
+| Rediseño v2 "verde bosque" (prototipo Claude Design → app real) | ✅ En producción (Vercel + GitHub Pages), 10 pantallas TSX, bundle −22% |
+| Esquema Supabase real | ✅ Aplicado y verificado: 13 bancos · 64 tarjetas · 71 beneficios · 3 destacados · RLS probado |
+| Motor v2 (tabla VE, totalero/rotativo, confianza) | ✅ Implementado (`ve.ts`, `walletView.ts`, `recommend.ts`) + smoke test |
+| Perfil de pago y preferencia de recompensa | ✅ Capturados y persistidos (`payment_profile`, `reward_goal`) |
+| Recomendador por comercio con "La usé" | ✅ En producción (promos demo en front, pendiente tabla) |
+| Paquete claridad UX (6 patrones MaxRewards) | ✅ Goals · checklist activación · estados vacíos que enseñan · TrustNotes · carrusel · multi-add |
+| Incidente registro (rate limit SMTP Supabase) | 🟡 Mitigado con mensajes específicos; decisión SMTP/confirmación pendiente (§17.9) |
+| Datos por curar | 🔲 `fee_month`, ofertas validadas, `welcome_bonus` (§17.10) |
+
+**Lo próximo que importa (sin cambiar la estrategia):** ejecutar el gate de 90 días con la app como vehículo — reclutar 15–30 usuarios del ICP en comunidades de millas, medir consultas no provocadas/retención/premio real, y cotizar el CPA con redes de afiliación (la hipótesis más frágil, §16).
 
 ---
 
