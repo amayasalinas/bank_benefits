@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
+import { setActivationFlag } from '../lib/activation'
 import { fetchOffers } from '../lib/dataSource'
 import type { Bank, Offer } from '../types/database'
 import { toConfLevel } from '../lib/walletView'
@@ -27,17 +29,19 @@ function expiryLabel(o: Offer): { text: string; urgent: boolean } {
 
 export default function Offers() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [offers, setOffers] = useState<OfferWithBank[]>([])
   const [loading, setLoading] = useState(true)
   const [bank, setBank] = useState('all')
   const [cat, setCat] = useState('all')
 
   useEffect(() => {
+    if (user) setActivationFlag(user.id, 'offersVisited')
     fetchOffers().then(({ offers }) => {
       setOffers(offers)
       setLoading(false)
     })
-  }, [])
+  }, [user])
 
   const banksInUse = useMemo(() => {
     const ids = [...new Set(offers.map((o) => o.bank_id))]

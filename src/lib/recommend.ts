@@ -6,13 +6,19 @@
  * - bifurcación totalero/rotativo: a un rotativo el interés le domina;
  *   sus tarjetas se rankean al final y la UI muestra la advertencia.
  */
-import type { MerchantView, PromoView, RankedCard, WalletCardView } from '../types/view'
+import type { MerchantView, PromoView, RankedCard, RewardGoal, WalletCardView } from '../types/view'
 import { COP } from './format'
 
+/**
+ * goal (opcional): meta del usuario (UP del PRD §8.2). SOLO desempata cuando
+ * dos tarjetas quedan a <5% de ahorro de diferencia — nunca altera el ahorro
+ * mostrado ni promueve una tarjeta claramente inferior.
+ */
 export function recommend(
   merchant: MerchantView,
   wallet: WalletCardView[],
-  promos: PromoView[]
+  promos: PromoView[],
+  goal?: RewardGoal
 ): RankedCard[] {
   const ranked: RankedCard[] = wallet.map((card) => {
     const baseRate = card.rates[merchant.cat] ?? card.rates.general ?? 0
@@ -33,7 +39,15 @@ export function recommend(
   // se come cualquier recompensa — recomendarles millas es malpráctica).
   return ranked.sort((a, b) => {
     if (a.isRotativo !== b.isRotativo) return a.isRotativo ? 1 : -1
-    return b.saving - a.saving
+    const diff = b.saving - a.saving
+    // Empate práctico (<5% de diferencia): gana la que va con la meta del usuario
+    const base = Math.max(a.saving, b.saving)
+    if (goal && goal !== 'explorar' && base > 0 && Math.abs(diff) / base < 0.05) {
+      const aMatch = a.reward === goal ? 1 : 0
+      const bMatch = b.reward === goal ? 1 : 0
+      if (aMatch !== bMatch) return bMatch - aMatch
+    }
+    return diff
   })
 }
 

@@ -17,6 +17,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
+  /** Actualiza user_metadata (p. ej. reward_goal) y refresca el usuario local. */
+  updateProfile: (data: Record<string, unknown>) => Promise<{ error: Error | null }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -78,8 +80,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const updateProfile = async (data: Record<string, unknown>) => {
+    if (USE_MOCKS) {
+      setUser((u) => (u ? ({ ...u, user_metadata: { ...u.user_metadata, ...data } } as User) : u))
+      return { error: null }
+    }
+    const { data: res, error } = await supabase.auth.updateUser({ data })
+    if (!error && res.user) setUser(res.user)
+    return { error: error as Error | null }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

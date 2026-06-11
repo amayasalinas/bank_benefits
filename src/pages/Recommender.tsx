@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { useUserCards } from '../hooks/useUserCards'
 import { toWalletViews } from '../lib/walletView'
 import { recommend } from '../lib/recommend'
+import { setActivationFlag } from '../lib/activation'
 import { MERCHANTS, PROMOS } from '../data/merchants'
 import { CAT_V2 } from '../data/categories'
 import { COP } from '../lib/format'
 import { REWARD_LABEL } from '../components/v2/RewardChip'
-import type { MerchantView } from '../types/view'
+import type { MerchantView, RewardGoal } from '../types/view'
 import Icon from '../components/v2/Icon'
-import GlyphTile from '../components/v2/GlyphTile'
 import ScreenHeader from '../components/v2/ScreenHeader'
+import GlyphTile from '../components/v2/GlyphTile'
 import ConfidenceBadge from '../components/v2/ConfidenceBadge'
+import SampleRecommendation from '../components/v2/SampleRecommendation'
 import Btn from '../components/v2/Btn'
 import { useToast } from '../components/v2/Toast'
 
@@ -24,9 +27,11 @@ const stepBtn: React.CSSProperties = {
 export default function Recommender() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { user } = useAuth()
   const { cards, loading } = useUserCards()
   const { showToast } = useToast()
   const wallet = useMemo(() => toWalletViews(cards), [cards])
+  const goal = user?.user_metadata?.reward_goal as RewardGoal | undefined
 
   const [merchant, setMerchant] = useState<MerchantView | null>(null)
   const [amount, setAmount] = useState(0)
@@ -40,6 +45,7 @@ export default function Recommender() {
     setUsed(false)
     setComputing(true)
     setTimeout(() => setComputing(false), 750)
+    if (user) setActivationFlag(user.id, 'firstQuery')
   }
 
   // categoría preseleccionada desde el dashboard (?cat=)
@@ -56,16 +62,20 @@ export default function Recommender() {
   const reset = () => { setMerchant(null); setQuery(''); setUsed(false) }
 
   if (!loading && wallet.length === 0) {
+    // Estado vacío que enseña (patrón MaxRewards 27-28): muestra el resultado real de ejemplo
     return (
       <div className="screen">
         <ScreenHeader title="¿Qué tarjeta uso?" subtitle="Recomendador" large />
-        <div style={{ padding: '30px 20px', textAlign: 'center' }}>
-          <GlyphTile glyph="cards" size={56} iconSize={26} />
-          <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 16 }}>Primero, tus tarjetas</h2>
-          <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginTop: 6, lineHeight: 1.5 }}>
-            Para decirte cuál usar necesitamos saber qué tarjetas tienes.
-          </p>
-          <Btn variant="primary" style={{ marginTop: 20 }} icon="plus" onClick={() => navigate('/add-card?onboarding=1')}>Agregar tarjeta</Btn>
+        <div style={{ padding: '24px 20px' }}>
+          <div className="eyebrow" style={{ marginBottom: 14 }}>Así se ve una recomendación</div>
+          <SampleRecommendation tone="light" exampleTag />
+          <div style={{ textAlign: 'center', marginTop: 24 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700 }}>Para hacerlo con TUS tarjetas…</h2>
+            <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginTop: 6, lineHeight: 1.5 }}>
+              Agrégalas primero. Solo banco y modelo — nunca el número completo.
+            </p>
+            <Btn variant="primary" style={{ marginTop: 18 }} icon="plus" onClick={() => navigate('/add-card?onboarding=1')}>Agregar mi primera tarjeta</Btn>
+          </div>
         </div>
       </div>
     )
@@ -112,9 +122,10 @@ export default function Recommender() {
   }
 
   // ── Resultado ──
-  const ranked = recommend(merchant, wallet, PROMOS).map((r) => ({ ...r, saving: amount * (r.rate / 100) }))
+  const ranked = recommend(merchant, wallet, PROMOS, goal).map((r) => ({ ...r, saving: amount * (r.rate / 100) }))
   const top = ranked[0]
   const runner = ranked[1]
+  const topMatchesGoal = goal && goal !== 'explorar' && top.reward === goal
 
   return (
     <div className="screen" style={{ background: 'var(--paper)' }}>
@@ -166,6 +177,12 @@ export default function Recommender() {
                 <div className="mono" style={{ fontSize: 10.5, color: 'rgba(246,245,240,0.6)', marginTop: 2 }}>{top.rate.toFixed(1)}% {REWARD_LABEL[top.reward]}</div>
               </div>
             </div>
+            {topMatchesGoal && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '5px 10px', borderRadius: 999, background: 'rgba(154,217,176,0.16)', border: '1px solid rgba(154,217,176,0.3)' }}>
+                <Icon name="sparkles" size={13} style={{ color: 'var(--hero-accent)' }} />
+                <span className="mono" style={{ fontSize: 10, color: 'var(--hero-accent)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Va con tu meta</span>
+              </div>
+            )}
             {/* por qué */}
             <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(246,245,240,0.14)', fontSize: 13, color: 'rgba(246,245,240,0.82)', lineHeight: 1.5 }}>
               {runner && runner.saving > 0
